@@ -1,0 +1,9 @@
+# Local Databricks helper — contains a live PAT token, do not commit
+db.py
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
