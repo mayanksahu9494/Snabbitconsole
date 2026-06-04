@@ -6173,14 +6173,9 @@ renderPerf();
     var cdrEl = document.getElementById('view-cdr');
     if (cdrEl) cdrEl.style.display = (view === 'cdr') ? 'block' : 'none';
     if (view === 'cdr') {
-      document.getElementById('title-sub').textContent = 'talk time & CDR reports';
+      document.getElementById('title-sub').textContent = 'calling performance';
       document.getElementById('marketControls').classList.add('hidden');
-      /* Ensure attendance data is loaded */
-      if (typeof PERF_LOAD_STATE !== 'undefined' && PERF_LOAD_STATE === 'idle') {
-        loadPerfData({ onDone: function() { if (typeof cdrRender === 'function') cdrRender(); } });
-      } else {
-        if (typeof cdrRender === 'function') cdrRender();
-      }
+      if (typeof cdrRender === 'function') cdrRender();
     }
   };
 
@@ -7282,7 +7277,7 @@ renderPerf();
       <div class="cp-meta" id="cpMeta">Loading&hellip;</div>
     </div>
     <div class="cp-controls">
-      <button class="cp-btn" id="cpRefreshBtn" onclick="cpFetch()">&#8635; Refresh</button>
+      <button class="cp-btn" id="cpRefreshBtnCdr" onclick="cpFetch()">&#8635; Refresh</button>
       <button class="cp-btn-ghost" id="cpSetupBtn" onclick="cpShowSetup()">&#9881; Setup</button>
       <span class="cp-status" id="cpStatus"></span>
     </div>
@@ -7424,6 +7419,10 @@ renderPerf();
     }
     var meta = document.getElementById('cpMeta');
     if (meta) meta.textContent = 'Data for ' + (d.date||'today') + ' \u00b7 Last updated: ' + (d.ts||'—') + ' \u00b7 source: ems.cdc';
+    /* Bridge to CDR_DATA format so Command Center TT calculations work */
+    window.CDR_DATA = d.agents.map(function(a) {
+      return { agent: a.agent, calls: a.dials, connected: 0, totalSecs: a.totalSec, connSecs: a.intSec };
+    });
     renderTLStrip(d.agents);
     renderAgentTable(d.agents);
   }
@@ -7439,7 +7438,7 @@ renderPerf();
   window.cpFetch = function() {
     var token = cpGetToken();
     if (!token) { cpShowSetup(); return; }
-    var btn = document.getElementById('cpRefreshBtn');
+    var btn = document.getElementById('cpRefreshBtnCdr');
     var status = document.getElementById('cpStatus');
     if (btn) btn.disabled = true;
     if (status) status.textContent = 'Fetching from Databricks\u2026';
@@ -7481,7 +7480,7 @@ renderPerf();
           cpPoll(stmtId, token);
         } else {
           if (status) status.textContent = 'Query failed';
-          var btn = document.getElementById('cpRefreshBtn');
+          var btn = document.getElementById('cpRefreshBtnCdr');
           if (btn) btn.disabled = false;
         }
       });
@@ -7489,7 +7488,7 @@ renderPerf();
   }
 
   function cpParseAndSave(res) {
-    var btn = document.getElementById('cpRefreshBtn');
+    var btn = document.getElementById('cpRefreshBtnCdr');
     var status = document.getElementById('cpStatus');
     try {
       var rows = res.result.data_array || [];
