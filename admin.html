@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snabbit Console — Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 32px; width: 100%; max-width: 560px; }
+  .logo { font-size: 13px; font-weight: 600; color: #F70F79; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  h1 { font-size: 22px; font-weight: 800; color: #e6edf3; margin-bottom: 6px; }
+  .sub { font-size: 13px; color: #8b949e; margin-bottom: 28px; line-height: 1.5; }
+  .label { font-size: 11px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  input[type=password], input[type=text] { width: 100%; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 7px; padding: 10px 13px; font-size: 13px; font-family: monospace; margin-bottom: 16px; outline: none; }
+  input:focus { border-color: #F70F79; }
+  .btn { width: 100%; background: #F70F79; color: #fff; border: none; border-radius: 8px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; transition: opacity 0.2s; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn:hover:not(:disabled) { opacity: 0.9; }
+  .divider { height: 1px; background: #30363d; margin: 24px 0; }
+  .log-wrap { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; min-height: 120px; max-height: 320px; overflow-y: auto; font-family: monospace; font-size: 12px; line-height: 1.7; }
+  .log-line { display: block; }
+  .log-line.ok { color: #3fb950; }
+  .log-line.err { color: #f85149; }
+  .log-line.info { color: #8b949e; }
+  .log-line.bold { color: #e6edf3; font-weight: 600; }
+  .preview { margin-top: 20px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; display: none; }
+  .preview-head { padding: 10px 14px; font-size: 11px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #30363d; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { padding: 8px 12px; text-align: left; color: #8b949e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; border-bottom: 1px solid #30363d; }
+  td { padding: 7px 12px; border-bottom: 1px solid #21262d; color: #e6edf3; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.mgr { font-size: 11px; font-weight: 600; }
+  .tt { color: #fbbf24; }
+  .di { color: #7dd3fc; }
+  .ul { color: #4ade80; }
+  .stamp { font-size: 11px; color: #8b949e; margin-top: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Snabbit Console</div>
+  <h1>Calling Data Admin</h1>
+  <p class="sub">Fetches live calling data from Databricks via Claude API, then pushes a snapshot to GitHub so everyone sees fresh data.</p>
+
+  <div class="label">Anthropic API Key</div>
+  <input type="password" id="anthropicKey" placeholder="sk-ant-..." autocomplete="off">
+
+  <div class="label">GitHub Token</div>
+  <input type="password" id="ghToken" placeholder="github_pat_..." autocomplete="off">
+
+  <div class="label">Target branch on GitHub</div>
+  <input type="text" id="ghBranch" value="main" autocomplete="off">
+
+  <button class="btn" id="fetchBtn" onclick="runFetch()">&#8635; Fetch &amp; Push to GitHub</button>
+
+  <div class="divider"></div>
+
+  <div class="label">Log</div>
+  <div class="log-wrap" id="log"><span class="log-line info">Ready. Hit the button to start.</span></div>
+
+  <div class="preview" id="preview">
+    <div class="preview-head">Data preview</div>
+    <table id="previewTable"></table>
+  </div>
+  <div class="stamp" id="stamp"></div>
+</div>
+
+<script>
+  /* ── Persist tokens in localStorage ── */
+  (function() {
+    var ak = localStorage.getItem('adm_ak');
+    var gh = localStorage.getItem('adm_gh');
+    var br = localStorage.getItem('adm_br');
+    if (ak) document.getElementById('anthropicKey').value = ak;
+    if (gh) document.getElementById('ghToken').value = gh;
+    if (br) document.getElementById('ghBranch').value = br;
+  })();
+
+  function saveTokens() {
+    try {
+      var ak = document.getElementById('anthropicKey').value.trim();
+      var gh = document.getElementById('ghToken').value.trim();
+      var br = document.getElementById('ghBranch').value.trim();
+      if (ak) localStorage.setItem('adm_ak', ak);
+      if (gh) localStorage.setItem('adm_gh', gh);
+      if (br) localStorage.setItem('adm_br', br);
+    } catch(e) {}
+  }
+
+  var _log = document.getElementById('log');
+  function log(msg, cls) {
+    var span = document.createElement('span');
+    span.className = 'log-line ' + (cls || 'info');
+    span.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    _log.appendChild(document.createElement('br'));
+    _log.appendChild(span);
+    _log.scrollTop = _log.scrollHeight;
+  }
+
+  function fmtSec(s) {
+    s = Math.round(s || 0);
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+    return m + ':' + String(sec).padStart(2,'0');
+  }
+
+  /* ── Databricks SQL via Anthropic MCP ── */
+  var DB_QUERY = "WITH users AS (SELECT _id AS user_id, get_json_object(_doc,'$.name') AS name FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY _id ORDER BY dms_ts DESC) AS rn FROM ems.cdc.users) WHERE rn = 1 AND Op <> 'D'), calls AS (SELECT get_json_object(_doc,'$.owner._id.$oid') AS owner_id, get_json_object(_doc,'$.payload.lead_phone') AS lead_phone, try_cast(get_json_object(_doc,'$.payload.duration') AS INT) AS duration_sec, get_json_object(_doc,'$.payload.call_status') AS call_status, COALESCE(to_date(try_cast(get_json_object(_doc,'$.payload.start_stamp') AS TIMESTAMP)), to_date(timestamp_millis(CAST(get_json_object(_doc,'$.occurredAt') AS BIGINT)))) AS call_date FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY _id ORDER BY dms_ts DESC) AS rn FROM ems.cdc.enriched_data) WHERE rn = 1 AND Op <> 'D'), agg AS (SELECT c.call_date, u.name AS agent_name, COUNT(*) AS total_dials, COUNT(DISTINCT c.lead_phone) AS unique_leads, SUM(COALESCE(c.duration_sec, 0)) AS total_sec, SUM(CASE WHEN c.call_status = 'answered' THEN COALESCE(c.duration_sec, 0) ELSE 0 END) AS int_sec FROM calls c JOIN users u ON c.owner_id = u.user_id WHERE c.call_date = CURRENT_DATE() GROUP BY c.call_date, u.name) SELECT a.call_date, COALESCE(m.team_lead, '—') AS manager, a.agent_name, a.total_dials, a.unique_leads, a.total_sec, a.int_sec FROM agg a LEFT JOIN main.analytics.tele_tl_mapping m ON trim(a.agent_name) = trim(m.agent_name) ORDER BY a.total_dials DESC";
+
+  async function runFetch() {
+    var btn = document.getElementById('fetchBtn');
+    btn.disabled = true;
+    saveTokens();
+
+    var ak  = document.getElementById('anthropicKey').value.trim();
+    var gh  = document.getElementById('ghToken').value.trim();
+    var br  = document.getElementById('ghBranch').value.trim() || 'main';
+
+    if (!ak) { log('Missing Anthropic API key', 'err'); btn.disabled = false; return; }
+    if (!gh) { log('Missing GitHub token', 'err'); btn.disabled = false; return; }
+
+    log('Calling Claude API with Databricks MCP...', 'info');
+
+    var prompt = 'Use the Snabbit Databricks SQL MCP tool to execute this exact query and return ONLY a JSON array — no explanation, no markdown, no backticks. Each element must have keys: agent, manager, dials, unique, totalSec, intSec. Query: ' + DB_QUERY;
+
+    var payload = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      mcp_servers: [{
+        type: 'url',
+        url: 'https://dbc-f49613fc-9586.cloud.databricks.com/api/2.0/mcp/sql',
+        name: 'snabbit-databricks'
+      }],
+      messages: [{ role: 'user', content: prompt }]
+    };
+
+    var response;
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ak,
+          'anthropic-version': '2023-06-01',
+          'anthropic-beta': 'mcp-client-2025-04-04'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) {
+      log('API call failed: ' + e.message, 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    var data;
+    try {
+      data = await response.json();
+    } catch(e) {
+      log('Failed to parse API response', 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    if (!response.ok) {
+      log('API error: ' + (data.error && data.error.message || response.status), 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    log('Got response from Claude. Parsing data...', 'info');
+
+    /* Extract text from response */
+    var text = '';
+    if (data.content && Array.isArray(data.content)) {
+      data.content.forEach(function(block) {
+        if (block.type === 'text') text += block.text;
+      });
+    }
+
+    /* Parse JSON array from text */
+    var agents;
+    try {
+      var clean = text.replace(/```json|```/g, '').trim();
+      /* Find first [ and last ] */
+      var start = clean.indexOf('[');
+      var end = clean.lastIndexOf(']');
+      if (start === -1 || end === -1) throw new Error('No JSON array found in response');
+      agents = JSON.parse(clean.slice(start, end + 1));
+    } catch(e) {
+      log('Parse error: ' + e.message, 'err');
+      log('Raw response: ' + text.slice(0, 300), 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    if (!agents || !agents.length) {
+      log('No agents returned from query', 'err');
+      btn.disabled = false;
+      return;
+    }
+
+    log('Got ' + agents.length + ' agents. Previewing...', 'ok');
+    showPreview(agents);
+
+    /* Build snapshot */
+    var now = new Date();
+    var ts = now.toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    var dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    var snapshot = { ts: ts, date: dateStr, agents: agents };
+
+    log('Pushing snapshot to GitHub (branch: ' + br + ')...', 'info');
+    await pushToGitHub(snapshot, gh, br, ts, dateStr);
+
+    btn.disabled = false;
+  }
+
+  function showPreview(agents) {
+    var wrap = document.getElementById('preview');
+    var tbl  = document.getElementById('previewTable');
+    wrap.style.display = 'block';
+
+    var html = '<tr><th>Agent</th><th>Manager</th><th class="num">Dials</th><th class="num">Unique</th><th class="num">Total TT</th><th class="num">Int TT</th></tr>';
+    agents.slice(0, 15).forEach(function(a) {
+      html += '<tr>'
+        + '<td>' + (a.agent || '—') + '</td>'
+        + '<td class="mgr">' + (a.manager || '—') + '</td>'
+        + '<td class="num di">' + (a.dials || 0) + '</td>'
+        + '<td class="num ul">' + (a.unique || 0) + '</td>'
+        + '<td class="num tt">' + fmtSec(a.totalSec || 0) + '</td>'
+        + '<td class="num">' + fmtSec(a.intSec || 0) + '</td>'
+        + '</tr>';
+    });
+    if (agents.length > 15) html += '<tr><td colspan="6" style="text-align:center;color:#8b949e;font-size:11px;">+ ' + (agents.length - 15) + ' more agents</td></tr>';
+    tbl.innerHTML = html;
+  }
+
+  async function pushToGitHub(snapshot, ghToken, branch, ts, dateStr) {
+    /* Step 1 — get current file SHA + content */
+    log('Reading current index.html from GitHub...', 'info');
+    var metaRes;
+    try {
+      metaRes = await fetch('https://api.github.com/repos/mayanksahu9494/Snabbitconsole/contents/index.html?ref=' + branch, {
+        headers: { 'Authorization': 'token ' + ghToken, 'Accept': 'application/vnd.github.v3+json' }
+      });
+    } catch(e) {
+      log('GitHub read failed: ' + e.message, 'err');
+      return;
+    }
+
+    var meta = await metaRes.json();
+    if (!meta.sha || !meta.content) {
+      log('GitHub: could not read file — ' + (meta.message || 'unknown error'), 'err');
+      return;
+    }
+
+    log('Got file SHA. Updating snapshot...', 'info');
+
+    /* Step 2 — decode, replace snapshot, re-encode */
+    var currentHTML;
+    try {
+      currentHTML = decodeURIComponent(escape(atob(meta.content.replace(/\n/g, ''))));
+    } catch(e) {
+      log('Failed to decode file: ' + e.message, 'err');
+      return;
+    }
+
+    var snapshotStr = 'var CP_SNAPSHOT = ' + JSON.stringify(snapshot) + ';';
+    var updated = currentHTML.replace(/var CP_SNAPSHOT = \{[\s\S]*?\};/, snapshotStr);
+
+    if (updated === currentHTML) {
+      log('Warning: CP_SNAPSHOT marker not found in file. Snapshot not updated.', 'err');
+      return;
+    }
+
+    /* Step 3 — commit */
+    var encoded;
+    try {
+      encoded = btoa(unescape(encodeURIComponent(updated)));
+    } catch(e) {
+      log('Encode error: ' + e.message, 'err');
+      return;
+    }
+
+    var commitRes;
+    try {
+      commitRes = await fetch('https://api.github.com/repos/mayanksahu9494/Snabbitconsole/contents/index.html', {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + ghToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'chore: calling snapshot ' + dateStr + ' ' + ts,
+          content: encoded,
+          sha: meta.sha,
+          branch: branch
+        })
+      });
+    } catch(e) {
+      log('GitHub commit failed: ' + e.message, 'err');
+      return;
+    }
+
+    var commitData = await commitRes.json();
+    if (commitData.commit) {
+      log('Pushed to GitHub successfully! Branch: ' + branch, 'ok');
+      log('Everyone will see fresh data in ~30 seconds.', 'ok');
+      document.getElementById('stamp').textContent = 'Last pushed: ' + ts;
+    } else {
+      log('GitHub push failed: ' + (commitData.message || 'unknown'), 'err');
+    }
+  }
+</script>
+</body>
+</html>
