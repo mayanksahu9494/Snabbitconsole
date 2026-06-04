@@ -6959,17 +6959,26 @@ renderPerf();
     var benchHead = ''; /* Yesterday column removed */
     var benchTd = function(v){ return ''; }; /* Yesterday column removed */
 
-    /* Compute Avg TT per TL from CDR_DATA */
+    /* Compute Avg TT per TL — uses CP_DATA (Databricks) first, falls back to CDR_DATA */
     function cdrAvgTT(tlName) {
+      var cpd = window.CP_DATA;
+      if (cpd && cpd.agents && cpd.agents.length) {
+        var matched = cpd.agents.filter(function(a){ return a.manager === tlName; });
+        if (matched.length > 0) {
+          var totalSecs = matched.reduce(function(s,a){ return s + (a.totalSec||0); }, 0);
+          var avg = Math.round(totalSecs / matched.length);
+          var h = Math.floor(avg/3600); var m = Math.floor((avg%3600)/60); var s = avg%60;
+          if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+          return m + ':' + String(s).padStart(2,'0');
+        }
+      }
       if (typeof window.CDR_DATA === 'undefined' || !window.CDR_DATA.length) return '\u2014';
       if (typeof ATTENDANCE === 'undefined') return '\u2014';
-      /* Build set of canonical agent names for this TL (lowercase for matching) */
       var attAgents = ATTENDANCE.filter(function(a){ return a.tl === tlName; }).map(function(a){ return a.agent.toLowerCase(); });
       var agentSet = {};
       attAgents.forEach(function(n){ agentSet[n] = true; });
       var totalSecs = 0; var count = 0;
       window.CDR_DATA.forEach(function(d){
-        /* Resolve CDR short name to canonical before lookup */
         var resolved = (typeof canonicalName === 'function') ? canonicalName(d.agent) : d.agent;
         var key = resolved ? resolved.toLowerCase() : d.agent.toLowerCase();
         if (agentSet[key] || agentSet[d.agent.toLowerCase()]) { totalSecs += d.totalSecs; count++; }
@@ -7001,15 +7010,24 @@ renderPerf();
         + '</tr>';
     }).join('');
 
-    /* Compute floor-level avg TT */
+    /* Compute floor-level avg TT — CP_DATA first, fallback CDR_DATA */
     var floorAvgTT = '\u2014';
-    if (typeof window.CDR_DATA !== 'undefined' && window.CDR_DATA.length) {
-      var floorTotalSecs = 0; var floorAgentCount = 0;
-      window.CDR_DATA.forEach(function(d){ floorTotalSecs += d.totalSecs; floorAgentCount++; });
-      if (floorAgentCount > 0) {
-        var fa = Math.round(floorTotalSecs / floorAgentCount);
-        var fm = Math.floor(fa/60); var fs = fa % 60;
-        floorAvgTT = fm + ':' + String(fs).padStart(2,'0');
+    var _cpd = window.CP_DATA;
+    if (_cpd && _cpd.agents && _cpd.agents.length) {
+      var _fts = _cpd.agents.reduce(function(s,a){ return s+(a.totalSec||0); },0);
+      var _fac = _cpd.agents.length;
+      if (_fac > 0) {
+        var _fa = Math.round(_fts/_fac);
+        var _fh = Math.floor(_fa/3600); var _fm = Math.floor((_fa%3600)/60); var _fs = _fa%60;
+        floorAvgTT = (_fh>0 ? _fh+':'+String(_fm).padStart(2,'0')+':' : _fm+':') + String(_fs).padStart(2,'0');
+      }
+    } else if (typeof window.CDR_DATA !== 'undefined' && window.CDR_DATA.length) {
+      var _fts2 = 0; var _fac2 = 0;
+      window.CDR_DATA.forEach(function(d){ _fts2 += d.totalSecs; _fac2++; });
+      if (_fac2 > 0) {
+        var _fa2 = Math.round(_fts2/_fac2);
+        var _fm2 = Math.floor(_fa2/60); var _fs2 = _fa2%60;
+        floorAvgTT = _fm2 + ':' + String(_fs2).padStart(2,'0');
       }
     }
 
