@@ -7439,9 +7439,9 @@ renderPerf();
       var isExc = exc.indexOf(a.agent) > -1;
       if (!isExc) { totDials += a.dials; totUnique += a.unique; totSec += a.totalSec; totIntSec += a.intSec; }
       var color = mgrColor(a.manager);
-      var safeAgent = a.agent.replace(/'/g, "\\'");
       var trackCls = isExc ? 'cp-toggle-track' : 'cp-toggle-track on';
-      var toggle = '<span class="cp-toggle" onclick="cpToggleAgent(\'' + safeAgent + '\')">'
+      var _agentIdx = window.CP_DATA.agents.indexOf(a);
+      var toggle = '<span class="cp-toggle" onclick="cpToggleAgent(window.CP_DATA.agents[' + _agentIdx + '].agent)">'
         + '<span class="' + trackCls + '"><span class="cp-toggle-thumb"></span></span></span>';
       html += '<tr' + (isExc ? ' class="cp-excluded"' : '') + '>';
       html += '<td>' + (i+1) + '</td>';
