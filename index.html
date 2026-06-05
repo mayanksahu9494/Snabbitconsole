@@ -6963,7 +6963,8 @@ renderPerf();
     function cdrAvgTT(tlName) {
       var cpd = window.CP_DATA;
       if (cpd && cpd.agents && cpd.agents.length) {
-        var matched = cpd.agents.filter(function(a){ return a.manager === tlName; });
+        var _exc = cpGetExcluded ? cpGetExcluded() : [];
+        var matched = cpd.agents.filter(function(a){ return a.manager === tlName && _exc.indexOf(a.agent) === -1; });
         if (matched.length > 0) {
           var totalSecs = matched.reduce(function(s,a){ return s + (a.totalSec||0); }, 0);
           var avg = Math.round(totalSecs / matched.length);
@@ -7014,8 +7015,10 @@ renderPerf();
     var floorAvgTT = '\u2014';
     var _cpd = window.CP_DATA;
     if (_cpd && _cpd.agents && _cpd.agents.length) {
-      var _fts = _cpd.agents.reduce(function(s,a){ return s+(a.totalSec||0); },0);
-      var _fac = _cpd.agents.length;
+      var _fexc = cpGetExcluded ? cpGetExcluded() : [];
+      var _factive = _cpd.agents.filter(function(a){ return _fexc.indexOf(a.agent) === -1; });
+      var _fts = _factive.reduce(function(s,a){ return s+(a.totalSec||0); },0);
+      var _fac = _factive.length;
       if (_fac > 0) {
         var _fa = Math.round(_fts/_fac);
         var _fh = Math.floor(_fa/3600); var _fm = Math.floor((_fa%3600)/60); var _fs = _fa%60;
@@ -7275,6 +7278,12 @@ renderPerf();
   .cp-tbl tr:hover { background:var(--panel-2); }
   .cp-tbl .cp-total { background:var(--panel-2); border-top:2px solid var(--border-2); }
   .cp-tbl .cp-total td { font-weight:700; }
+  .cp-tbl tr.cp-excluded { opacity:0.35; }
+  .cp-toggle { display:inline-flex; align-items:center; cursor:pointer; margin-left:6px; vertical-align:middle; }
+  .cp-toggle-track { width:28px; height:15px; background:#444; border-radius:8px; position:relative; transition:background 0.2s; flex-shrink:0; }
+  .cp-toggle-track.on { background:#22c55e; }
+  .cp-toggle-thumb { width:11px; height:11px; background:#fff; border-radius:50%; position:absolute; top:2px; left:2px; transition:left 0.2s; }
+  .cp-toggle-track.on .cp-toggle-thumb { left:15px; }
   .cp-tl-filter { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
   .cp-empty { text-align:center; color:var(--muted); padding:60px 20px; font-size:13px; }
   .cp-setup-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; }
@@ -7312,7 +7321,7 @@ renderPerf();
 (function() {
 
   /* ── Embedded fallback snapshot (replaced on each GitHub push) ── */
-  var CP_SNAPSHOT = {"ts": "Jun 5 2026, 12:44 PM IST", "date": "2026-06-05", "agents": [{"agent": "Kapeesh R", "manager": "Antaryami", "dials": 150, "unique": 70, "totalSec": 5913, "intSec": 3252}, {"agent": "Khushboo R", "manager": "Antaryami", "dials": 129, "unique": 83, "totalSec": 5469, "intSec": 3672}, {"agent": "Siddharth S", "manager": "Antaryami", "dials": 127, "unique": 52, "totalSec": 8291, "intSec": 6356}, {"agent": "Faizal B", "manager": "Antaryami", "dials": 127, "unique": 68, "totalSec": 3339, "intSec": 2017}, {"agent": "Manjunath S", "manager": "Chetana", "dials": 113, "unique": 72, "totalSec": 5699, "intSec": 4160}, {"agent": "Saraswathi K", "manager": "Antaryami", "dials": 109, "unique": 60, "totalSec": 5679, "intSec": 4225}, {"agent": "Zaiba T", "manager": "Antaryami", "dials": 105, "unique": 73, "totalSec": 5884, "intSec": 4457}, {"agent": "Anjana D", "manager": "Antaryami", "dials": 102, "unique": 46, "totalSec": 3395, "intSec": 2303}, {"agent": "Ashwin S", "manager": "Aman", "dials": 95, "unique": 50, "totalSec": 3562, "intSec": 2404}, {"agent": "Prity T", "manager": "Antaryami", "dials": 90, "unique": 66, "totalSec": 4386, "intSec": 3325}, {"agent": "Akash K", "manager": "Antaryami", "dials": 89, "unique": 69, "totalSec": 5838, "intSec": 4697}, {"agent": "Abdul RA", "manager": "Antaryami", "dials": 83, "unique": 59, "totalSec": 3356, "intSec": 2136}, {"agent": "Fathima K", "manager": "Antaryami", "dials": 82, "unique": 57, "totalSec": 3447, "intSec": 2169}, {"agent": "Omprakash T", "manager": "Antaryami", "dials": 81, "unique": 59, "totalSec": 3610, "intSec": 2126}, {"agent": "Prathamesh B", "manager": "Chetana", "dials": 80, "unique": 49, "totalSec": 3110, "intSec": 2222}, {"agent": "Asha S", "manager": "Antaryami", "dials": 76, "unique": 60, "totalSec": 2369, "intSec": 1257}, {"agent": "Poornima K", "manager": "Chetana", "dials": 67, "unique": 53, "totalSec": 2474, "intSec": 1461}, {"agent": "Misbahul H", "manager": "Aman", "dials": 55, "unique": 43, "totalSec": 2354, "intSec": 1464}, {"agent": "Nayan B", "manager": "Antaryami", "dials": 52, "unique": 35, "totalSec": 2536, "intSec": 1860}, {"agent": "Nisha Y", "manager": "Chetana", "dials": 42, "unique": 30, "totalSec": 1200, "intSec": 709}, {"agent": "Naveen L", "manager": "Aman", "dials": 42, "unique": 32, "totalSec": 1292, "intSec": 708}, {"agent": "Zacharias M", "manager": "Aman", "dials": 37, "unique": 36, "totalSec": 989, "intSec": 428}, {"agent": "Akshay H", "manager": "Antaryami", "dials": 34, "unique": 20, "totalSec": 1169, "intSec": 648}, {"agent": "Pooja T", "manager": "Chetana", "dials": 33, "unique": 30, "totalSec": 1213, "intSec": 776}, {"agent": "Kaneez F", "manager": "Aman", "dials": 29, "unique": 25, "totalSec": 1784, "intSec": 1486}, {"agent": "Hassan S", "manager": "Antaryami", "dials": 16, "unique": 8, "totalSec": 370, "intSec": 202}, {"agent": "Ishrath G", "manager": "Aman", "dials": 16, "unique": 7, "totalSec": 0, "intSec": 0}, {"agent": "Aslam H", "manager": "Aman", "dials": 15, "unique": 15, "totalSec": 768, "intSec": 577}, {"agent": "Priyanka B", "manager": "Chetana", "dials": 15, "unique": 14, "totalSec": 881, "intSec": 750}, {"agent": "Preeti P", "manager": "Chetana", "dials": 14, "unique": 12, "totalSec": 664, "intSec": 472}, {"agent": "Ankit R", "manager": "Aman", "dials": 13, "unique": 10, "totalSec": 795, "intSec": 613}, {"agent": "Ranjan P", "manager": "Aman", "dials": 13, "unique": 12, "totalSec": 580, "intSec": 421}, {"agent": "Naveed S", "manager": "Antaryami", "dials": 10, "unique": 10, "totalSec": 654, "intSec": 532}, {"agent": "Vidya C", "manager": "Aman", "dials": 10, "unique": 9, "totalSec": 414, "intSec": 211}, {"agent": "Shakshi V", "manager": "Aman", "dials": 6, "unique": 6, "totalSec": 176, "intSec": 118}, {"agent": "Reshma J", "manager": "Chetana", "dials": 6, "unique": 6, "totalSec": 476, "intSec": 437}, {"agent": "Nandini G", "manager": "Chetana", "dials": 3, "unique": 3, "totalSec": 75, "intSec": 75}, {"agent": "Bijoy F", "manager": "Antaryami", "dials": 3, "unique": 3, "totalSec": 90, "intSec": 0}, {"agent": "Shabab Z", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 55, "intSec": 0}, {"agent": "Rustam M", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 22, "intSec": 22}, {"agent": "Rohit K", "manager": "Aman", "dials": 2, "unique": 2, "totalSec": 0, "intSec": 0}, {"agent": "Aarti K", "manager": "Chetana", "dials": 2, "unique": 2, "totalSec": 62, "intSec": 62}, {"agent": "Adnan M", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 90, "intSec": 60}, {"agent": "Akbar T", "manager": "Antaryami", "dials": 1, "unique": 1, "totalSec": 11, "intSec": 0}, {"agent": "Sonali K", "manager": "Chetana", "dials": 1, "unique": 1, "totalSec": 231, "intSec": 231}, {"agent": "Raihan A", "manager": "Antaryami", "dials": 1, "unique": 1, "totalSec": 107, "intSec": 107}]};
+  var CP_SNAPSHOT = {"ts": "Jun 4 2026, 11:58 PM", "date": "2026-06-04", "agents": [{"agent": "Khushboo R", "manager": "Antaryami", "dials": 217, "unique": 145, "totalSec": 9741, "intSec": 6788}, {"agent": "Kapeesh R", "manager": "Antaryami", "dials": 216, "unique": 99, "totalSec": 10474, "intSec": 7228}, {"agent": "Fathima K", "manager": "Antaryami", "dials": 208, "unique": 118, "totalSec": 9742, "intSec": 6570}, {"agent": "Hassan S", "manager": "Antaryami", "dials": 200, "unique": 89, "totalSec": 6813, "intSec": 3973}, {"agent": "Anjana D", "manager": "Antaryami", "dials": 196, "unique": 123, "totalSec": 9308, "intSec": 6700}, {"agent": "Adnan M", "manager": "Antaryami", "dials": 154, "unique": 89, "totalSec": 5594, "intSec": 3182}, {"agent": "Omprakash T", "manager": "Antaryami", "dials": 145, "unique": 100, "totalSec": 9070, "intSec": 6890}, {"agent": "Ashwin S", "manager": "Aman", "dials": 128, "unique": 78, "totalSec": 4823, "intSec": 2881}, {"agent": "Poornima K", "manager": "Chetana", "dials": 87, "unique": 75, "totalSec": 3326, "intSec": 2230}, {"agent": "Sumitra C", "manager": "Chetana", "dials": 64, "unique": 47, "totalSec": 2611, "intSec": 1808}, {"agent": "Asha Samal", "manager": "Antaryami", "dials": 59, "unique": 54, "totalSec": 1733, "intSec": 782}, {"agent": "Nisha Y", "manager": "Chetana", "dials": 55, "unique": 44, "totalSec": 1604, "intSec": 700}, {"agent": "Zacharias M", "manager": "Aman", "dials": 46, "unique": 37, "totalSec": 2168, "intSec": 1430}, {"agent": "Pooja T", "manager": "Chetana", "dials": 39, "unique": 30, "totalSec": 1653, "intSec": 1037}, {"agent": "Bijoy F", "manager": "Antaryami", "dials": 34, "unique": 31, "totalSec": 1245, "intSec": 754}, {"agent": "Faizal B", "manager": "Antaryami", "dials": 30, "unique": 21, "totalSec": 790, "intSec": 434}, {"agent": "Preeti P", "manager": "Chetana", "dials": 27, "unique": 21, "totalSec": 935, "intSec": 474}, {"agent": "Kaneez F", "manager": "Aman", "dials": 17, "unique": 13, "totalSec": 700, "intSec": 484}, {"agent": "Aslam H", "manager": "Aman", "dials": 16, "unique": 16, "totalSec": 648, "intSec": 444}, {"agent": "Reshma J", "manager": "Chetana", "dials": 11, "unique": 11, "totalSec": 671, "intSec": 541}, {"agent": "Naveed S", "manager": "Antaryami", "dials": 10, "unique": 9, "totalSec": 575, "intSec": 470}, {"agent": "Rohit K", "manager": "Aman", "dials": 9, "unique": 6, "totalSec": 300, "intSec": 215}, {"agent": "Akash K", "manager": "Antaryami", "dials": 8, "unique": 8, "totalSec": 248, "intSec": 138}, {"agent": "Naveen L", "manager": "Aman", "dials": 5, "unique": 5, "totalSec": 466, "intSec": 410}, {"agent": "Vidya C", "manager": "Aman", "dials": 4, "unique": 3, "totalSec": 242, "intSec": 181}, {"agent": "Rustam M", "manager": "Antaryami", "dials": 3, "unique": 3, "totalSec": 186, "intSec": 168}, {"agent": "Akash N", "manager": "Antaryami", "dials": 3, "unique": 3, "totalSec": 92, "intSec": 52}, {"agent": "Priyanka B", "manager": "Chetana", "dials": 3, "unique": 3, "totalSec": 331, "intSec": 313}, {"agent": "Zaiba T", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 255, "intSec": 255}, {"agent": "Aarti K", "manager": "Chetana", "dials": 2, "unique": 2, "totalSec": 44, "intSec": 0}, {"agent": "Raihan A", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 192, "intSec": 162}, {"agent": "Misbahul H", "manager": "Aman", "dials": 2, "unique": 1, "totalSec": 60, "intSec": 0}, {"agent": "Sonali K", "manager": "Chetana", "dials": 2, "unique": 1, "totalSec": 0, "intSec": 0}, {"agent": "Prathamesh B", "manager": "Chetana", "dials": 1, "unique": 1, "totalSec": 2, "intSec": 0}, {"agent": "Prity T", "manager": "Antaryami", "dials": 1, "unique": 1, "totalSec": 239, "intSec": 239}, {"agent": "Ranjan P", "manager": "Aman", "dials": 1, "unique": 1, "totalSec": 0, "intSec": 0}, {"agent": "Shakshi V", "manager": "Aman", "dials": 1, "unique": 1, "totalSec": 31, "intSec": 0}]};
 
   window.CP_DATA = CP_SNAPSHOT;
 
@@ -7384,11 +7393,37 @@ renderPerf();
     renderAgentTable(window.CP_DATA.agents);
   };
 
+  /* ── Agent exclusion (localStorage) ── */
+  function cpGetExcluded() {
+    try { return JSON.parse(localStorage.getItem('cp_excluded') || '[]'); } catch(e) { return []; }
+  }
+  function cpSetExcluded(arr) {
+    try { localStorage.setItem('cp_excluded', JSON.stringify(arr)); } catch(e) {}
+  }
+  function cpCleanExcluded(agents) {
+    var names = agents.map(function(a){ return a.agent; });
+    var exc = cpGetExcluded().filter(function(n){ return names.indexOf(n) > -1; });
+    cpSetExcluded(exc);
+    return exc;
+  }
+  window.cpToggleAgent = function(agentName) {
+    var exc = cpGetExcluded();
+    var idx = exc.indexOf(agentName);
+    if (idx > -1) exc.splice(idx, 1); else exc.push(agentName);
+    cpSetExcluded(exc);
+    renderAgentTable(window.CP_DATA.agents);
+    var active = window.CP_DATA.agents.filter(function(a){ return exc.indexOf(a.agent) === -1; });
+    window.CDR_DATA = active.map(function(a){
+      return { agent: a.agent, calls: a.dials, connected: 0, totalSecs: a.totalSec, connSecs: a.intSec };
+    });
+  };
+
   function renderAgentTable(agents) {
     var data = agents.slice();
     if (_cpActiveTL !== 'ALL') data = data.filter(function(a) { return a.manager === _cpActiveTL; });
     data.sort(function(a,b) { return b.totalSec - a.totalSec; });
 
+    var exc = cpCleanExcluded(agents);
     var totDials=0, totUnique=0, totSec=0, totIntSec=0;
     var html = '<table class="cp-tbl"><thead><tr>';
     html += '<th>#</th>';
@@ -7401,12 +7436,16 @@ renderPerf();
     html += '</tr></thead><tbody>';
 
     data.forEach(function(a, i) {
-      totDials += a.dials; totUnique += a.unique;
-      totSec += a.totalSec; totIntSec += a.intSec;
+      var isExc = exc.indexOf(a.agent) > -1;
+      if (!isExc) { totDials += a.dials; totUnique += a.unique; totSec += a.totalSec; totIntSec += a.intSec; }
       var color = mgrColor(a.manager);
-      html += '<tr>';
+      var safeAgent = a.agent.replace(/'/g, "\\'");
+      var trackCls = isExc ? 'cp-toggle-track' : 'cp-toggle-track on';
+      var toggle = '<span class="cp-toggle" onclick="cpToggleAgent(\'' + safeAgent + '\')">'
+        + '<span class="' + trackCls + '"><span class="cp-toggle-thumb"></span></span></span>';
+      html += '<tr' + (isExc ? ' class="cp-excluded"' : '') + '>';
       html += '<td>' + (i+1) + '</td>';
-      html += '<td>' + a.agent + '</td>';
+      html += '<td>' + a.agent + toggle + '</td>';
       html += '<td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:' + color + '22;color:' + color + '">' + (a.manager||'—') + '</span></td>';
       html += '<td style="color:#7dd3fc;font-weight:600">' + a.dials + '</td>';
       html += '<td style="color:#4ade80;font-weight:600">' + a.unique + '</td>';
@@ -7415,8 +7454,9 @@ renderPerf();
       html += '</tr>';
     });
 
+    var activeCount = data.length - exc.filter(function(n){ return data.some(function(a){ return a.agent===n; }); }).length;
     html += '<tr class="cp-total">';
-    html += '<td></td><td>Total (' + data.length + ' agents)</td><td></td>';
+    html += '<td></td><td>Total (' + activeCount + ' active / ' + data.length + ')</td><td></td>';
     html += '<td style="color:#7dd3fc">' + totDials.toLocaleString() + '</td>';
     html += '<td style="color:#4ade80">' + totUnique.toLocaleString() + '</td>';
     html += '<td style="color:#fbbf24">' + fmtSec(totSec) + '</td>';
