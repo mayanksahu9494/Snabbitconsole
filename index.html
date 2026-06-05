@@ -6915,7 +6915,7 @@ renderPerf();
       return out;
     }
 
-    var TLS = [
+    var _TLS3 = [
       {id:'ch', label:'Chetana',   team:'Akarsh', tgt:tgtCh},
       {id:'am', label:'Aman',      team:'Akarsh', tgt:tgtAm},
       {id:'an', label:'Antaryami', team:'Rizwan',  tgt:tgtAn}
@@ -6926,7 +6926,7 @@ renderPerf();
       return el ? (parseFloat(el.value) || 0) : 0;
     }
 
-    var tlRows = TLS.map(function(t) {
+    var tlRows = _TLS3.map(function(t) {
       var perf   = sumByTL(t.label, dateISO);
       var projAR = Math.round(perf.er * refRate);
       var present = presentCount(t.label);
