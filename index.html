@@ -1478,7 +1478,7 @@
   }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- cache-bust Jun 5 2026 12:59 IST --></head>
+</head>
 <body>
 <!-- Find my ER modal — placed at top of body so it's available when scripts wire handlers -->
 <div class="fme-backdrop" id="fmeBackdrop" role="dialog" aria-labelledby="fmeTitle" aria-modal="true">
@@ -6963,7 +6963,7 @@ renderPerf();
     function cdrAvgTT(tlName) {
       var cpd = window.CP_DATA;
       if (cpd && cpd.agents && cpd.agents.length) {
-        var _exc = cpGetExcluded ? cpGetExcluded() : [];
+        var _exc = (function(){ try { return JSON.parse(localStorage.getItem('cp_excluded')||'[]'); } catch(e){ return []; } })();
         var matched = cpd.agents.filter(function(a){ return a.manager === tlName && _exc.indexOf(a.agent) === -1; });
         if (matched.length > 0) {
           var totalSecs = matched.reduce(function(s,a){ return s + (a.totalSec||0); }, 0);
@@ -7015,7 +7015,7 @@ renderPerf();
     var floorAvgTT = '\u2014';
     var _cpd = window.CP_DATA;
     if (_cpd && _cpd.agents && _cpd.agents.length) {
-      var _fexc = cpGetExcluded ? cpGetExcluded() : [];
+      var _fexc = (function(){ try { return JSON.parse(localStorage.getItem('cp_excluded')||'[]'); } catch(e){ return []; } })();
       var _factive = _cpd.agents.filter(function(a){ return _fexc.indexOf(a.agent) === -1; });
       var _fts = _factive.reduce(function(s,a){ return s+(a.totalSec||0); },0);
       var _fac = _factive.length;
