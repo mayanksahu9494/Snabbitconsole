@@ -1625,14 +1625,20 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:0 4px">
-      <button id="incentiveToggle" onclick="toggleIncentive()" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(245,158,11,0.3)">🏆 Week 1 Incentive</button>
+      <button id="incentiveToggle" onclick="toggleIncentive()" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(245,158,11,0.3)">📊 Track My Incentive</button>
     </div>
     <div id="incentivePanel" style="display:none;padding:12px 0">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
         <!-- LEFT: Personal incentive tracker -->
         <div style="flex:1;min-width:340px;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(239,68,68,0.06));border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:16px 20px">
-          <div style="font-size:16px;font-weight:800;color:#fbbf24;margin-bottom:4px">🏆 Week 1 Incentive</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Jun 1–7 · Hit your AR target, earn the bonus</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div id="inc-week-title" style="font-size:16px;font-weight:800;color:#fbbf24">🏆 Week 2 Incentive</div>
+            <div style="display:flex;gap:4px;margin-left:auto">
+              <button id="inc-btn-w1" onclick="setIncWeek('JW1')" style="font-size:13px;font-weight:700;padding:6px 16px;border-radius:8px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.1);color:#fbbf24;cursor:pointer">W1 🔒</button>
+              <button id="inc-btn-w2" onclick="setIncWeek('JW2')" style="font-size:13px;font-weight:700;padding:6px 16px;border-radius:8px;border:1px solid rgba(245,158,11,0.7);background:rgba(245,158,11,0.25);color:#fbbf24;cursor:pointer">W2</button>
+            </div>
+          </div>
+          <div id="inc-week-sub" style="font-size:12px;color:var(--muted);margin-bottom:14px">Jun 8–14 · Hit your AR target, earn the bonus</div>
           <div id="inc-agent-prompt" style="font-size:14px;color:var(--muted);padding:20px 0;text-align:center;display:none">
             ← Select an agent from the dropdown to see their gap-to-goal
           </div>
@@ -1672,8 +1678,8 @@
         </div>
         <!-- RIGHT: TL-wise leaderboard -->
         <div style="flex:1;min-width:340px;background:linear-gradient(135deg,rgba(96,165,250,0.06),rgba(167,139,250,0.06));border:1px solid rgba(96,165,250,0.25);border-radius:12px;padding:16px 20px">
-          <div style="font-size:16px;font-weight:800;color:#60a5fa;margin-bottom:4px">📊 Jun W1 Leaderboard</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Top 5 agents per TL · Jun 1–7 ARs</div>
+          <div id="inc-leaderboard-title" style="font-size:16px;font-weight:800;color:#60a5fa;margin-bottom:4px">Week 2 Leaderboard — Top ARs by TL</div>
+          <div id="inc-leaderboard-sub" style="font-size:12px;color:var(--muted);margin-bottom:14px">Top 5 agents per TL · Jun 8–14 ARs</div>
           <div id="inc-leaderboard" style="display:flex;gap:12px;flex-wrap:wrap"></div>
         </div>
       </div>
@@ -4679,12 +4685,30 @@ window.toggleIncentive = function() {
   if (panel.style.display === 'block') updateIncentivePanel();
 };
 
+var INC_WEEK = 'JW2';
+window.setIncWeek = function(wk) {
+  INC_WEEK = wk;
+  var isW1 = wk === 'JW1';
+  var titleEl = document.getElementById('inc-week-title');
+  var subEl   = document.getElementById('inc-week-sub');
+  var btnW1   = document.getElementById('inc-btn-w1');
+  var btnW2   = document.getElementById('inc-btn-w2');
+  if (titleEl) titleEl.textContent = isW1 ? '🏆 Week 1 Incentive 🔒' : '🏆 Week 2 Incentive';
+  if (subEl)   subEl.textContent   = isW1 ? 'Jun 1–7 · Locked — final results' : 'Jun 8–14 · Hit your AR target, earn the bonus';
+  if (btnW1) { btnW1.style.background = isW1 ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.1)'; btnW1.style.borderColor = isW1 ? 'rgba(245,158,11,0.7)' : 'rgba(245,158,11,0.3)'; }
+  if (btnW2) { btnW2.style.background = isW1 ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.25)'; btnW2.style.borderColor = isW1 ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.7)'; }
+  updateIncentivePanel();
+};
+
 function updateIncentivePanel() {
   if (typeof DUMMY_PERF === 'undefined' || !DUMMY_PERF.length) return;
   var agentName = CURRENT_PERF_AGENT;
   var prompt = document.getElementById('inc-agent-prompt');
   var data   = document.getElementById('inc-agent-data');
   var nameEl = document.getElementById('inc-agent-name');
+  var wl     = WEEK_LABELS[INC_WEEK] || WEEK_LABELS['JW2'];
+  var wStart = wl.start;
+  var wEnd   = wl.end;
 
   if (!agentName || agentName === 'ALL') {
     if (prompt) prompt.style.display = 'block';
@@ -4695,7 +4719,7 @@ function updateIncentivePanel() {
     var agent = DUMMY_PERF.find(function(a) { return a.agent === agentName; });
     var myAR = 0;
     if (agent) {
-      var t = agentTotalsInRange(agent, '2026-06-01', '2026-06-07');
+      var t = agentTotalsInRange(agent, wStart, wEnd);
       myAR = t.ar;
     }
     if (nameEl) nameEl.textContent = agentName;
@@ -4721,6 +4745,8 @@ function updateIncentivePanel() {
 
   /* Build TL leaderboard */
   var lbEl = document.getElementById('inc-leaderboard');
+  var lbTitle = document.getElementById('inc-leaderboard-title');
+  if (lbTitle) lbTitle.textContent = (INC_WEEK === 'JW1' ? 'Week 1 Leaderboard' : 'Week 2 Leaderboard') + ' — Top ARs by TL';
   if (!lbEl) return;
   var tlNames = ['Chetana', 'Aman', 'Antaryami'];
   var tlColors = {'Chetana':'#fbbf24', 'Aman':'#60a5fa', 'Antaryami':'#4ade80'};
@@ -4733,13 +4759,13 @@ function updateIncentivePanel() {
       attAgents.forEach(function(n) { agentSet[n] = true; });
       DUMMY_PERF.forEach(function(p) {
         if (agentSet[p.agent.toLowerCase()]) {
-          var t = agentTotalsInRange(p, '2026-06-01', '2026-06-07');
+          var t = agentTotalsInRange(p, wStart, wEnd);
           if (t.ar > 0 || t.er > 0) agentsInTL.push({ name: p.agent, ar: t.ar });
         }
       });
     } else {
       DUMMY_PERF.forEach(function(p) {
-        var t = agentTotalsInRange(p, '2026-06-01', '2026-06-07');
+        var t = agentTotalsInRange(p, wStart, wEnd);
         if (t.ar > 0) agentsInTL.push({ name: p.agent, ar: t.ar });
       });
     }
@@ -7321,7 +7347,7 @@ renderPerf();
 (function() {
 
   /* ── Embedded fallback snapshot (replaced on each GitHub push) ── */
-  var CP_SNAPSHOT = {"ts": "Jun 7 2026, 07:06 PM IST", "date": "2026-06-07", "agents": [{"agent": "Siddharth S", "manager": "Antaryami", "dials": 338, "unique": 159, "totalSec": 16024, "intSec": 10348}, {"agent": "Omprakash T", "manager": "Antaryami", "dials": 318, "unique": 143, "totalSec": 11833, "intSec": 6033}, {"agent": "Hassan S", "manager": "Antaryami", "dials": 281, "unique": 148, "totalSec": 9704, "intSec": 6388}, {"agent": "Ayaan P", "manager": "—", "dials": 253, "unique": 73, "totalSec": 14401, "intSec": 10259}, {"agent": "Rizwan M", "manager": "Antaryami", "dials": 246, "unique": 124, "totalSec": 12406, "intSec": 7917}, {"agent": "Kapeesh R", "manager": "Antaryami", "dials": 227, "unique": 67, "totalSec": 9932, "intSec": 6196}, {"agent": "Vikash K", "manager": "—", "dials": 221, "unique": 111, "totalSec": 10641, "intSec": 6764}, {"agent": "Divya S", "manager": "—", "dials": 220, "unique": 149, "totalSec": 11982, "intSec": 8939}, {"agent": "Rohit P", "manager": "—", "dials": 202, "unique": 114, "totalSec": 12305, "intSec": 9528}, {"agent": "kabita D", "manager": "Aman", "dials": 188, "unique": 103, "totalSec": 11525, "intSec": 8910}, {"agent": "Adnan M", "manager": "Antaryami", "dials": 188, "unique": 119, "totalSec": 10543, "intSec": 7895}, {"agent": "Shabab Z", "manager": "Antaryami", "dials": 167, "unique": 82, "totalSec": 4563, "intSec": 2317}, {"agent": "Abdul RA", "manager": "Antaryami", "dials": 162, "unique": 98, "totalSec": 6478, "intSec": 3837}, {"agent": "Manjunath S", "manager": "Chetana", "dials": 161, "unique": 68, "totalSec": 7093, "intSec": 4115}, {"agent": "Saraswathi K", "manager": "Antaryami", "dials": 157, "unique": 99, "totalSec": 11014, "intSec": 8580}, {"agent": "Ishrath G", "manager": "Aman", "dials": 156, "unique": 102, "totalSec": 5432, "intSec": 2950}, {"agent": "Bibi H", "manager": "Antaryami", "dials": 155, "unique": 106, "totalSec": 11063, "intSec": 8601}, {"agent": "Umaira F", "manager": "—", "dials": 141, "unique": 89, "totalSec": 4253, "intSec": 1961}, {"agent": "Faizal B", "manager": "Antaryami", "dials": 136, "unique": 84, "totalSec": 4369, "intSec": 2114}, {"agent": "Ruby K", "manager": "—", "dials": 106, "unique": 83, "totalSec": 5471, "intSec": 4287}, {"agent": "Asha S", "manager": "Antaryami", "dials": 98, "unique": 73, "totalSec": 3254, "intSec": 1602}, {"agent": "Arifa K", "manager": "Antaryami", "dials": 97, "unique": 52, "totalSec": 5079, "intSec": 3403}, {"agent": "Prity T", "manager": "Antaryami", "dials": 97, "unique": 80, "totalSec": 3972, "intSec": 2491}, {"agent": "Fathima K", "manager": "Antaryami", "dials": 88, "unique": 75, "totalSec": 4157, "intSec": 2991}, {"agent": "Akash K", "manager": "Antaryami", "dials": 86, "unique": 67, "totalSec": 4186, "intSec": 2984}, {"agent": "Prathamesh B", "manager": "Chetana", "dials": 84, "unique": 45, "totalSec": 3455, "intSec": 2450}, {"agent": "Zaiba T", "manager": "Antaryami", "dials": 82, "unique": 43, "totalSec": 2855, "intSec": 1366}, {"agent": "Farah D", "manager": "—", "dials": 70, "unique": 61, "totalSec": 4563, "intSec": 3488}, {"agent": "Poornima K", "manager": "Chetana", "dials": 70, "unique": 51, "totalSec": 3056, "intSec": 1937}, {"agent": "Preeti P", "manager": "Chetana", "dials": 62, "unique": 51, "totalSec": 2931, "intSec": 2321}, {"agent": "Sumitra C", "manager": "Chetana", "dials": 61, "unique": 50, "totalSec": 2518, "intSec": 1798}, {"agent": "Kaneez F", "manager": "Aman", "dials": 59, "unique": 51, "totalSec": 1966, "intSec": 982}, {"agent": "Nisha Y", "manager": "Chetana", "dials": 58, "unique": 37, "totalSec": 2265, "intSec": 1400}, {"agent": "Misbahul H", "manager": "Aman", "dials": 37, "unique": 32, "totalSec": 1573, "intSec": 898}, {"agent": "Priyanka B", "manager": "Chetana", "dials": 35, "unique": 28, "totalSec": 1325, "intSec": 844}, {"agent": "Zacharias M", "manager": "Aman", "dials": 32, "unique": 25, "totalSec": 1673, "intSec": 1177}, {"agent": "Vidya C", "manager": "Aman", "dials": 31, "unique": 22, "totalSec": 1232, "intSec": 757}, {"agent": "Reshma J", "manager": "Chetana", "dials": 29, "unique": 28, "totalSec": 1190, "intSec": 762}, {"agent": "Aslam H", "manager": "Aman", "dials": 27, "unique": 24, "totalSec": 887, "intSec": 401}, {"agent": "Ranjan P", "manager": "Aman", "dials": 20, "unique": 9, "totalSec": 881, "intSec": 454}, {"agent": "Bijoy F", "manager": "Antaryami", "dials": 14, "unique": 13, "totalSec": 355, "intSec": 70}, {"agent": "Ankit R", "manager": "Aman", "dials": 4, "unique": 1, "totalSec": 51, "intSec": 0}, {"agent": "Rustam M", "manager": "Antaryami", "dials": 3, "unique": 3, "totalSec": 48, "intSec": 48}, {"agent": "Akbar T", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 583, "intSec": 583}, {"agent": "Raihan A", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 53, "intSec": 0}, {"agent": "Ashwin S", "manager": "Aman", "dials": 2, "unique": 2, "totalSec": 185, "intSec": 185}, {"agent": "Rohit K", "manager": "Aman", "dials": 2, "unique": 1, "totalSec": 61, "intSec": 0}, {"agent": "Saurav P", "manager": "—", "dials": 2, "unique": 1, "totalSec": 43, "intSec": 0}, {"agent": "Nandini G", "manager": "Chetana", "dials": 2, "unique": 2, "totalSec": 55, "intSec": 0}, {"agent": "Naveen L", "manager": "Aman", "dials": 2, "unique": 2, "totalSec": 129, "intSec": 129}, {"agent": "Komal Devi", "manager": "Antaryami", "dials": 2, "unique": 1, "totalSec": 85, "intSec": 85}, {"agent": "James G", "manager": "—", "dials": 1, "unique": 1, "totalSec": 110, "intSec": 110}]};
+  var CP_SNAPSHOT = {"ts": "Jun 8 2026, 12:28 PM IST", "date": "2026-06-08", "agents": [{"agent": "Divya S", "manager": "—", "dials": 171, "unique": 128, "totalSec": 5219, "intSec": 2689}, {"agent": "Vikash K", "manager": "—", "dials": 153, "unique": 78, "totalSec": 6693, "intSec": 4234}, {"agent": "Ayaan P", "manager": "—", "dials": 152, "unique": 69, "totalSec": 7878, "intSec": 5808}, {"agent": "Ishrath G", "manager": "Aman", "dials": 144, "unique": 95, "totalSec": 5371, "intSec": 3177}, {"agent": "Khushboo R", "manager": "Antaryami", "dials": 129, "unique": 71, "totalSec": 4611, "intSec": 2778}, {"agent": "Arifa K", "manager": "Antaryami", "dials": 127, "unique": 58, "totalSec": 7080, "intSec": 5411}, {"agent": "Anisa R", "manager": "Antaryami", "dials": 127, "unique": 66, "totalSec": 4981, "intSec": 3416}, {"agent": "Siddharth S", "manager": "Antaryami", "dials": 120, "unique": 83, "totalSec": 6795, "intSec": 4992}, {"agent": "kabita D", "manager": "Aman", "dials": 119, "unique": 43, "totalSec": 6496, "intSec": 5130}, {"agent": "Saraswathi K", "manager": "Antaryami", "dials": 118, "unique": 80, "totalSec": 5525, "intSec": 3638}, {"agent": "Hassan S", "manager": "Antaryami", "dials": 110, "unique": 27, "totalSec": 3895, "intSec": 2339}, {"agent": "Bibi H", "manager": "Antaryami", "dials": 100, "unique": 67, "totalSec": 5028, "intSec": 3381}, {"agent": "Manjunath S", "manager": "Chetana", "dials": 99, "unique": 41, "totalSec": 4424, "intSec": 3019}, {"agent": "Rohit P", "manager": "—", "dials": 95, "unique": 76, "totalSec": 3621, "intSec": 1983}, {"agent": "Kapeesh R", "manager": "Antaryami", "dials": 91, "unique": 54, "totalSec": 7405, "intSec": 6320}, {"agent": "Abdul RA", "manager": "Antaryami", "dials": 90, "unique": 56, "totalSec": 3500, "intSec": 2226}, {"agent": "Prathamesh B", "manager": "Chetana", "dials": 80, "unique": 36, "totalSec": 2758, "intSec": 1666}, {"agent": "Ashwin S", "manager": "Aman", "dials": 71, "unique": 41, "totalSec": 3133, "intSec": 2380}, {"agent": "Pooja T", "manager": "Chetana", "dials": 71, "unique": 54, "totalSec": 3357, "intSec": 2024}, {"agent": "Sumitra C", "manager": "Chetana", "dials": 65, "unique": 44, "totalSec": 2545, "intSec": 1614}, {"agent": "Kaneez F", "manager": "Aman", "dials": 63, "unique": 49, "totalSec": 3160, "intSec": 2365}, {"agent": "Akash K", "manager": "Antaryami", "dials": 63, "unique": 47, "totalSec": 2818, "intSec": 2002}, {"agent": "Nisha Y", "manager": "Chetana", "dials": 62, "unique": 44, "totalSec": 1957, "intSec": 1207}, {"agent": "Farah D", "manager": "—", "dials": 61, "unique": 49, "totalSec": 2440, "intSec": 1727}, {"agent": "Bijoy F", "manager": "Antaryami", "dials": 55, "unique": 54, "totalSec": 1536, "intSec": 853}, {"agent": "Umaira F", "manager": "—", "dials": 54, "unique": 43, "totalSec": 2911, "intSec": 2208}, {"agent": "Ankit R", "manager": "Aman", "dials": 53, "unique": 33, "totalSec": 2535, "intSec": 1729}, {"agent": "Adnan M", "manager": "Antaryami", "dials": 46, "unique": 25, "totalSec": 1695, "intSec": 1202}, {"agent": "Priyanka B", "manager": "Chetana", "dials": 46, "unique": 38, "totalSec": 1989, "intSec": 1476}, {"agent": "Ruby K", "manager": "—", "dials": 44, "unique": 34, "totalSec": 2061, "intSec": 1571}, {"agent": "Prity T", "manager": "Antaryami", "dials": 39, "unique": 33, "totalSec": 1364, "intSec": 710}, {"agent": "Reshma J", "manager": "Chetana", "dials": 31, "unique": 26, "totalSec": 1518, "intSec": 1023}, {"agent": "Vidya C", "manager": "Aman", "dials": 29, "unique": 24, "totalSec": 852, "intSec": 488}, {"agent": "Ranjan P", "manager": "Aman", "dials": 25, "unique": 17, "totalSec": 634, "intSec": 459}, {"agent": "Aslam H", "manager": "Aman", "dials": 22, "unique": 17, "totalSec": 1660, "intSec": 1534}, {"agent": "Preeti P", "manager": "Chetana", "dials": 21, "unique": 17, "totalSec": 1217, "intSec": 904}, {"agent": "Misbahul H", "manager": "Aman", "dials": 19, "unique": 17, "totalSec": 896, "intSec": 721}, {"agent": "Zaiba T", "manager": "Antaryami", "dials": 17, "unique": 15, "totalSec": 892, "intSec": 698}, {"agent": "Naveed S", "manager": "Antaryami", "dials": 16, "unique": 14, "totalSec": 357, "intSec": 76}, {"agent": "Aarti K", "manager": "Chetana", "dials": 14, "unique": 13, "totalSec": 526, "intSec": 296}, {"agent": "Rizwan M", "manager": "Antaryami", "dials": 12, "unique": 5, "totalSec": 285, "intSec": 184}, {"agent": "Fathima K", "manager": "Antaryami", "dials": 10, "unique": 8, "totalSec": 469, "intSec": 369}, {"agent": "Zacharias M", "manager": "Aman", "dials": 3, "unique": 1, "totalSec": 18, "intSec": 0}, {"agent": "Raihan A", "manager": "Antaryami", "dials": 3, "unique": 3, "totalSec": 228, "intSec": 218}, {"agent": "Sneha G", "manager": "—", "dials": 2, "unique": 1, "totalSec": 30, "intSec": 0}, {"agent": "Asha S", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 51, "intSec": 0}, {"agent": "Shabab Z", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 37, "intSec": 0}, {"agent": "Naveen L", "manager": "Aman", "dials": 2, "unique": 2, "totalSec": 78, "intSec": 78}, {"agent": "Nandini G", "manager": "Chetana", "dials": 2, "unique": 2, "totalSec": 46, "intSec": 0}, {"agent": "Akash N", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 39, "intSec": 0}, {"agent": "Sonali K", "manager": "Chetana", "dials": 1, "unique": 1, "totalSec": 374, "intSec": 374}, {"agent": "James G", "manager": "—", "dials": 1, "unique": 1, "totalSec": 34, "intSec": 34}, {"agent": "Poornima K", "manager": "Chetana", "dials": 1, "unique": 1, "totalSec": 30, "intSec": 0}, {"agent": "Mubashir R", "manager": "Antaryami", "dials": 1, "unique": 1, "totalSec": 22, "intSec": 0}, {"agent": "Akshay H", "manager": "Antaryami", "dials": 1, "unique": 1, "totalSec": 30, "intSec": 0}]};
 
   window.CP_DATA = CP_SNAPSHOT;
 
