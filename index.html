@@ -1625,14 +1625,20 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:0 4px">
-      <button id="incentiveToggle" onclick="toggleIncentive()" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(245,158,11,0.3)">🏆 Week 1 Incentive</button>
+      <button id="incentiveToggle" onclick="toggleIncentive()" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:0.02em;box-shadow:0 2px 8px rgba(245,158,11,0.3)">📊 Track My Incentive</button>
     </div>
     <div id="incentivePanel" style="display:none;padding:12px 0">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
         <!-- LEFT: Personal incentive tracker -->
         <div style="flex:1;min-width:340px;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(239,68,68,0.06));border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:16px 20px">
-          <div style="font-size:16px;font-weight:800;color:#fbbf24;margin-bottom:4px">🏆 Week 1 Incentive</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Jun 1–7 · Hit your AR target, earn the bonus</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div id="inc-week-title" style="font-size:16px;font-weight:800;color:#fbbf24">🏆 Week 2 Incentive</div>
+            <div style="display:flex;gap:4px;margin-left:auto">
+              <button id="inc-btn-w1" onclick="setIncWeek('JW1')" style="font-size:13px;font-weight:700;padding:6px 16px;border-radius:8px;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.1);color:#fbbf24;cursor:pointer">W1 🔒</button>
+              <button id="inc-btn-w2" onclick="setIncWeek('JW2')" style="font-size:13px;font-weight:700;padding:6px 16px;border-radius:8px;border:1px solid rgba(245,158,11,0.7);background:rgba(245,158,11,0.25);color:#fbbf24;cursor:pointer">W2</button>
+            </div>
+          </div>
+          <div id="inc-week-sub" style="font-size:12px;color:var(--muted);margin-bottom:14px">Jun 8–14 · Hit your AR target, earn the bonus</div>
           <div id="inc-agent-prompt" style="font-size:14px;color:var(--muted);padding:20px 0;text-align:center;display:none">
             ← Select an agent from the dropdown to see their gap-to-goal
           </div>
@@ -1672,8 +1678,8 @@
         </div>
         <!-- RIGHT: TL-wise leaderboard -->
         <div style="flex:1;min-width:340px;background:linear-gradient(135deg,rgba(96,165,250,0.06),rgba(167,139,250,0.06));border:1px solid rgba(96,165,250,0.25);border-radius:12px;padding:16px 20px">
-          <div style="font-size:16px;font-weight:800;color:#60a5fa;margin-bottom:4px">📊 Jun W1 Leaderboard</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Top 5 agents per TL · Jun 1–7 ARs</div>
+          <div id="inc-leaderboard-title" style="font-size:16px;font-weight:800;color:#60a5fa;margin-bottom:4px">Week 2 Leaderboard — Top ARs by TL</div>
+          <div id="inc-leaderboard-sub" style="font-size:12px;color:var(--muted);margin-bottom:14px">Top 5 agents per TL · Jun 8–14 ARs</div>
           <div id="inc-leaderboard" style="display:flex;gap:12px;flex-wrap:wrap"></div>
         </div>
       </div>
@@ -2988,12 +2994,9 @@ function loadAlignmentData() {
         var grandTotal = window.ALIGNMENT_DATA.reduce(function(s, r) { return s + r.alignsTomorrow; }, 0);
         console.log('[Alignment] loaded:', window.ALIGNMENT_DATA.length, 'agents | total:', grandTotal);
 
-        /* r3-d1-al removed — R3 is fully manual, no rptRender3 call needed */
-        /* Only re-render perf table if the perf tab is currently visible */
-        var perfView = document.getElementById('view-perf');
-        if (typeof renderPerf === 'function' && perfView && perfView.classList.contains('active')) {
-          renderPerf();
-        }
+        /* r3-d1-al input removed — D+1 is now entered manually per TL */
+        if (typeof renderPerf === 'function') renderPerf();
+        if (typeof window.rptRender3 === 'function') window.rptRender3();
       } catch(e) {
         console.warn('[Alignment] parse error:', e);
       }
@@ -3542,7 +3545,7 @@ function renderPerfTable(weekKey) {
       + '<td style="text-align:center">' + attendanceCellHTML(r.agent, wl.start, wl.end) + '</td>'
       + '<td style="text-align:right" class="num-cell er' + (r.er === 0 ? ' zero' : '') + '">' + r.er + '</td>'
       + '<td style="text-align:right" class="num-cell ar' + (r.ar === 0 ? ' zero' : '') + '">' + r.ar + '</td>'
-      + '<td style="text-align:right;color:#fb923c" class="num-cell' + ((r.fl||0) === 0 ? ' zero' : '') + '">' + (r.fl||0) + '</td>'
+      + '<td style="text-align:right" class="num-cell' + ((r.fl||0) === 0 ? ' zero' : '') + '" style="color:#fb923c">' + (r.fl||0) + '</td>'
       + '<td style="text-align:right" class="conv-cell ' + convClass(r.er, r.ar) + '">' + convText(r.er, r.ar) + '</td>'
       + '<td>' + renderSourceSplit(r.ar_by_source) + '</td>'
       + '</tr>';
@@ -4682,12 +4685,32 @@ window.toggleIncentive = function() {
   if (panel.style.display === 'block') updateIncentivePanel();
 };
 
+var INC_WEEK = 'JW2';
+window.setIncWeek = function(wk) {
+  INC_WEEK = wk;
+  var isW1 = wk === 'JW1';
+  var titleEl = document.getElementById('inc-week-title');
+  var subEl   = document.getElementById('inc-week-sub');
+  var btnW1   = document.getElementById('inc-btn-w1');
+  var btnW2   = document.getElementById('inc-btn-w2');
+  if (titleEl) titleEl.textContent = isW1 ? '🏆 Week 1 Incentive 🔒' : '🏆 Week 2 Incentive';
+  if (subEl)   subEl.textContent   = isW1 ? 'Jun 1–7 · Locked — final results' : 'Jun 8–14 · Hit your AR target, earn the bonus';
+  var lbSubEl = document.getElementById('inc-leaderboard-sub');
+  if (lbSubEl) lbSubEl.textContent = isW1 ? 'Top 5 agents per TL · Jun 1–7 ARs' : 'Top 5 agents per TL · Jun 8–14 ARs';
+  if (btnW1) { btnW1.style.background = isW1 ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.1)'; btnW1.style.borderColor = isW1 ? 'rgba(245,158,11,0.7)' : 'rgba(245,158,11,0.3)'; }
+  if (btnW2) { btnW2.style.background = isW1 ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.25)'; btnW2.style.borderColor = isW1 ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.7)'; }
+  updateIncentivePanel();
+};
+
 function updateIncentivePanel() {
   if (typeof DUMMY_PERF === 'undefined' || !DUMMY_PERF.length) return;
   var agentName = CURRENT_PERF_AGENT;
   var prompt = document.getElementById('inc-agent-prompt');
   var data   = document.getElementById('inc-agent-data');
   var nameEl = document.getElementById('inc-agent-name');
+  var wl     = WEEK_LABELS[INC_WEEK] || WEEK_LABELS['JW2'];
+  var wStart = wl.start;
+  var wEnd   = wl.end;
 
   if (!agentName || agentName === 'ALL') {
     if (prompt) prompt.style.display = 'block';
@@ -4698,7 +4721,7 @@ function updateIncentivePanel() {
     var agent = DUMMY_PERF.find(function(a) { return a.agent === agentName; });
     var myAR = 0;
     if (agent) {
-      var t = agentTotalsInRange(agent, '2026-06-01', '2026-06-07');
+      var t = agentTotalsInRange(agent, wStart, wEnd);
       myAR = t.ar;
     }
     if (nameEl) nameEl.textContent = agentName;
@@ -4724,6 +4747,8 @@ function updateIncentivePanel() {
 
   /* Build TL leaderboard */
   var lbEl = document.getElementById('inc-leaderboard');
+  var lbTitle = document.getElementById('inc-leaderboard-title');
+  if (lbTitle) lbTitle.textContent = (INC_WEEK === 'JW1' ? 'Week 1 Leaderboard' : 'Week 2 Leaderboard') + ' — Top ARs by TL';
   if (!lbEl) return;
   var tlNames = ['Chetana', 'Aman', 'Antaryami'];
   var tlColors = {'Chetana':'#fbbf24', 'Aman':'#60a5fa', 'Antaryami':'#4ade80'};
@@ -4736,13 +4761,13 @@ function updateIncentivePanel() {
       attAgents.forEach(function(n) { agentSet[n] = true; });
       DUMMY_PERF.forEach(function(p) {
         if (agentSet[p.agent.toLowerCase()]) {
-          var t = agentTotalsInRange(p, '2026-06-01', '2026-06-07');
+          var t = agentTotalsInRange(p, wStart, wEnd);
           if (t.ar > 0 || t.er > 0) agentsInTL.push({ name: p.agent, ar: t.ar });
         }
       });
     } else {
       DUMMY_PERF.forEach(function(p) {
-        var t = agentTotalsInRange(p, '2026-06-01', '2026-06-07');
+        var t = agentTotalsInRange(p, wStart, wEnd);
         if (t.ar > 0) agentsInTL.push({ name: p.agent, ar: t.ar });
       });
     }
@@ -6176,14 +6201,9 @@ renderPerf();
     var cdrEl = document.getElementById('view-cdr');
     if (cdrEl) cdrEl.style.display = (view === 'cdr') ? 'block' : 'none';
     if (view === 'cdr') {
-      document.getElementById('title-sub').textContent = 'talk time & CDR reports';
+      document.getElementById('title-sub').textContent = 'calling performance';
       document.getElementById('marketControls').classList.add('hidden');
-      /* Ensure attendance data is loaded */
-      if (typeof PERF_LOAD_STATE !== 'undefined' && PERF_LOAD_STATE === 'idle') {
-        loadPerfData({ onDone: function() { if (typeof cdrRender === 'function') cdrRender(); } });
-      } else {
-        if (typeof cdrRender === 'function') cdrRender();
-      }
+      if (typeof cdrRender === 'function') cdrRender();
     }
   };
 
@@ -6898,9 +6918,32 @@ renderPerf();
     function getBench(id) {
       return 0; /* Yesterday column removed — no bench values needed */
     }
-    /* getAl and tlAlignStats removed — R3 is fully manual via getD1() */
+    function getAl(id) {
+      var el = document.getElementById('r3-'+id+'-al');
+      return el ? (parseFloat(el.value)||0) : 0;
+    }
 
-    var TLS = [
+    /* Aggregate ALIGNMENT_DATA per TL using ATTENDANCE roster */
+    function tlAlignStats(tlName) {
+      var out = { aligns: 0, auditSum: 0, auditCount: 0 };
+      if (!window.ALIGNMENT_DATA || !window.ALIGNMENT_DATA.length) return out;
+      if (typeof ATTENDANCE === 'undefined') return out;
+      var agentSet = {};
+      ATTENDANCE.filter(function(a){ return a.tl === tlName; })
+        .forEach(function(a){ agentSet[a.agent.toLowerCase()] = true; });
+      window.ALIGNMENT_DATA.forEach(function(d) {
+        if (agentSet[d.agent.toLowerCase()]) {
+          out.aligns += d.alignsTomorrow;
+          if (d.auditPct !== null && d.auditPct !== undefined) {
+            out.auditSum += d.auditPct;
+            out.auditCount++;
+          }
+        }
+      });
+      return out;
+    }
+
+    var _TLS3 = [
       {id:'ch', label:'Chetana',   team:'Akarsh', tgt:tgtCh},
       {id:'am', label:'Aman',      team:'Akarsh', tgt:tgtAm},
       {id:'an', label:'Antaryami', team:'Rizwan',  tgt:tgtAn}
@@ -6911,7 +6954,7 @@ renderPerf();
       return el ? (parseFloat(el.value) || 0) : 0;
     }
 
-    var tlRows = TLS.map(function(t) {
+    var tlRows = _TLS3.map(function(t) {
       var perf   = sumByTL(t.label, dateISO);
       var projAR = Math.round(perf.er * refRate);
       var present = presentCount(t.label);
@@ -6944,17 +6987,27 @@ renderPerf();
     var benchHead = ''; /* Yesterday column removed */
     var benchTd = function(v){ return ''; }; /* Yesterday column removed */
 
-    /* Compute Avg TT per TL from CDR_DATA */
+    /* Compute Avg TT per TL — uses CP_DATA (Databricks) first, falls back to CDR_DATA */
     function cdrAvgTT(tlName) {
+      var cpd = window.CP_DATA;
+      if (cpd && cpd.agents && cpd.agents.length) {
+        var _exc = (function(){ try { return JSON.parse(localStorage.getItem('cp_excluded')||'[]'); } catch(e){ return []; } })();
+        var matched = cpd.agents.filter(function(a){ return a.manager === tlName && _exc.indexOf(a.agent) === -1; });
+        if (matched.length > 0) {
+          var totalSecs = matched.reduce(function(s,a){ return s + (a.totalSec||0); }, 0);
+          var avg = Math.round(totalSecs / matched.length);
+          var h = Math.floor(avg/3600); var m = Math.floor((avg%3600)/60); var s = avg%60;
+          if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+          return m + ':' + String(s).padStart(2,'0');
+        }
+      }
       if (typeof window.CDR_DATA === 'undefined' || !window.CDR_DATA.length) return '\u2014';
       if (typeof ATTENDANCE === 'undefined') return '\u2014';
-      /* Build set of canonical agent names for this TL (lowercase for matching) */
       var attAgents = ATTENDANCE.filter(function(a){ return a.tl === tlName; }).map(function(a){ return a.agent.toLowerCase(); });
       var agentSet = {};
       attAgents.forEach(function(n){ agentSet[n] = true; });
       var totalSecs = 0; var count = 0;
       window.CDR_DATA.forEach(function(d){
-        /* Resolve CDR short name to canonical before lookup */
         var resolved = (typeof canonicalName === 'function') ? canonicalName(d.agent) : d.agent;
         var key = resolved ? resolved.toLowerCase() : d.agent.toLowerCase();
         if (agentSet[key] || agentSet[d.agent.toLowerCase()]) { totalSecs += d.totalSecs; count++; }
@@ -6976,7 +7029,7 @@ renderPerf();
         + '<td style="color:var(--muted-2);font-size:13px">'+r.roster+'</td>'
         + '<td style="color:#7dd3fc;font-weight:700">'+r.present+'</td>'
         + '<td class="r3-border-r" style="color:#fb923c;font-size:13px">'+avgTT+'</td>'
-        + benchTd(0)
+        + benchTd(r.bench)
         + '<td style="color:#fbbf24;font-weight:700">'+n(r.er)+'</td>'
         + '<td class="r3-border-r" style="color:#a78bfa">'+n(r.ar)+'</td>'
         + '<td class="r3-border-r" style="color:#e879f9;font-weight:700">'+(r.tgt > 0 ? String(r.tgt) : '—')+'</td>'
@@ -6986,15 +7039,26 @@ renderPerf();
         + '</tr>';
     }).join('');
 
-    /* Compute floor-level avg TT */
+    /* Compute floor-level avg TT — CP_DATA first, fallback CDR_DATA */
     var floorAvgTT = '\u2014';
-    if (typeof window.CDR_DATA !== 'undefined' && window.CDR_DATA.length) {
-      var floorTotalSecs = 0; var floorAgentCount = 0;
-      window.CDR_DATA.forEach(function(d){ floorTotalSecs += d.totalSecs; floorAgentCount++; });
-      if (floorAgentCount > 0) {
-        var fa = Math.round(floorTotalSecs / floorAgentCount);
-        var fm = Math.floor(fa/60); var fs = fa % 60;
-        floorAvgTT = fm + ':' + String(fs).padStart(2,'0');
+    var _cpd = window.CP_DATA;
+    if (_cpd && _cpd.agents && _cpd.agents.length) {
+      var _fexc = (function(){ try { return JSON.parse(localStorage.getItem('cp_excluded')||'[]'); } catch(e){ return []; } })();
+      var _factive = _cpd.agents.filter(function(a){ return _fexc.indexOf(a.agent) === -1; });
+      var _fts = _factive.reduce(function(s,a){ return s+(a.totalSec||0); },0);
+      var _fac = _factive.length;
+      if (_fac > 0) {
+        var _fa = Math.round(_fts/_fac);
+        var _fh = Math.floor(_fa/3600); var _fm = Math.floor((_fa%3600)/60); var _fs = _fa%60;
+        floorAvgTT = (_fh>0 ? _fh+':'+String(_fm).padStart(2,'0')+':' : _fm+':') + String(_fs).padStart(2,'0');
+      }
+    } else if (typeof window.CDR_DATA !== 'undefined' && window.CDR_DATA.length) {
+      var _fts2 = 0; var _fac2 = 0;
+      window.CDR_DATA.forEach(function(d){ _fts2 += d.totalSecs; _fac2++; });
+      if (_fac2 > 0) {
+        var _fa2 = Math.round(_fts2/_fac2);
+        var _fm2 = Math.floor(_fa2/60); var _fs2 = _fa2%60;
+        floorAvgTT = _fm2 + ':' + String(_fs2).padStart(2,'0');
       }
     }
 
@@ -7209,288 +7273,440 @@ renderPerf();
 </script>
 
 <!-- ============================================================
-     TALK TIME & CDR REPORTS — Tab 5
+     CALLING PERFORMANCE — Tab 5  (Databricks: ems.cdc)
      ============================================================ -->
 <style>
   #view-cdr { display:none; padding:16px; background:var(--bg); }
-  .cdr-controls { display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
-  .cdr-controls select { background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-size:13px; }
-  .cdr-tbl { width:100%; border-collapse:collapse; }
-  .cdr-tbl th { background:var(--panel-3); padding:10px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted-2); text-align:center; border-bottom:2px solid var(--border); }
-  .cdr-tbl th:first-child { text-align:left; }
-  .cdr-tbl td { padding:10px 12px; text-align:center; font-size:14px; border-bottom:1px solid var(--border); }
-  .cdr-tbl td:first-child { text-align:left; font-weight:600; }
-  .cdr-tbl tr:hover { background:var(--panel-2); }
-  .cdr-tbl .cdr-total { background:var(--panel-2); border-top:2px solid var(--border-2); }
-  .cdr-tbl .cdr-total td { font-weight:700; }
+  .cp-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .cp-title { font-size:20px; font-weight:800; color:var(--text); margin:0; }
+  .cp-meta { font-size:11px; color:var(--muted-2); margin-top:3px; }
+  .cp-controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .cp-btn { background:#F70F79; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-size:13px; font-weight:700; cursor:pointer; }
+  .cp-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .cp-btn-ghost { background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:7px 14px; font-size:12px; cursor:pointer; }
+  .cp-btn-ghost.active { background:#F70F79; color:#fff; border-color:#F70F79; }
+  .cp-status { font-size:11px; color:var(--muted-2); }
+  .cp-tl-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-bottom:20px; }
+  .cp-tl-card { background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .cp-tl-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .cp-tl-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .cp-tl-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .cp-tl-stat { }
+  .cp-tl-lbl { font-size:10px; color:var(--muted-2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px; }
+  .cp-tl-val { font-size:18px; font-weight:700; color:var(--text); line-height:1.1; }
+  .cp-tl-val.tt { color:#fbbf24; }
+  .cp-tl-val.avg { color:#fb923c; font-size:15px; }
+  .cp-divider { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; padding:8px 0 10px; border-bottom:1px solid var(--border-2); margin-bottom:12px; }
+  .cp-tbl { width:100%; border-collapse:collapse; }
+  .cp-tbl th { background:var(--panel-3); padding:9px 12px; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted-2); text-align:right; border-bottom:2px solid var(--border); }
+  .cp-tbl th:first-child, .cp-tbl th:nth-child(2) { text-align:left; }
+  .cp-tbl td { padding:9px 12px; text-align:right; font-size:13px; border-bottom:1px solid var(--border); }
+  .cp-tbl td:first-child { text-align:left; font-size:12px; color:var(--muted-2); width:32px; }
+  .cp-tbl td:nth-child(2) { text-align:left; font-weight:700; font-size:14px; }
+  .cp-tbl tr:hover { background:var(--panel-2); }
+  .cp-tbl .cp-total { background:var(--panel-2); border-top:2px solid var(--border-2); }
+  .cp-tbl .cp-total td { font-weight:700; }
+  .cp-tbl tr.cp-excluded { opacity:0.35; }
+  .cp-toggle { display:inline-flex; align-items:center; cursor:pointer; margin-left:6px; vertical-align:middle; }
+  .cp-toggle-track { width:28px; height:15px; background:#444; border-radius:8px; position:relative; transition:background 0.2s; flex-shrink:0; }
+  .cp-toggle-track.on { background:#22c55e; }
+  .cp-toggle-thumb { width:11px; height:11px; background:#fff; border-radius:50%; position:absolute; top:2px; left:2px; transition:left 0.2s; }
+  .cp-toggle-track.on .cp-toggle-thumb { left:15px; }
+  .cp-tl-filter { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .cp-empty { text-align:center; color:var(--muted); padding:60px 20px; font-size:13px; }
+  .cp-setup-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:9999; display:flex; align-items:center; justify-content:center; }
+  .cp-setup-box { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:28px 32px; width:100%; max-width:460px; }
+  .cp-setup-title { font-size:18px; font-weight:800; color:var(--text); margin-bottom:6px; }
+  .cp-setup-sub { font-size:12px; color:var(--muted); margin-bottom:20px; line-height:1.5; }
+  .cp-setup-label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+  .cp-setup-input { width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:7px; padding:9px 12px; font-size:13px; font-family:monospace; box-sizing:border-box; margin-bottom:14px; }
+  .cp-setup-row { display:flex; gap:10px; margin-top:6px; }
+  .cp-setup-save { flex:1; background:#F70F79; color:#fff; border:none; border-radius:7px; padding:10px; font-size:14px; font-weight:700; cursor:pointer; }
+  .cp-setup-skip { background:var(--panel-2); color:var(--muted); border:1px solid var(--border); border-radius:7px; padding:10px 16px; font-size:13px; cursor:pointer; }
 </style>
 
 <section id="view-cdr">
-  <div style="margin-bottom:16px">
-    <h2 style="font-size:20px;font-weight:800;color:var(--text);margin:0">Talk Time & CDR Reports</h2>
-    <div style="font-size:12px;color:var(--muted);margin-top:4px">Call duration analysis from CDR data · Column S (Call Duration)</div>
+  <div class="cp-header">
+    <div>
+      <h2 class="cp-title">Calling Performance</h2>
+      <div class="cp-meta" id="cpMeta">Loading&hellip;</div>
+    </div>
+    <div class="cp-controls">
+      <button class="cp-btn" id="cpRefreshBtnCdr" onclick="cpFetch()">&#8635; Refresh</button>
+      <button class="cp-btn-ghost" id="cpSetupBtn" onclick="cpShowSetup()">&#9881; Setup</button>
+      <span class="cp-status" id="cpStatus"></span>
+    </div>
   </div>
-  <div class="cdr-controls">
-    <button onclick="cdrLoadLive()" style="background:#F70F79;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer">↻ Refresh CDR Data</button>
-    <span id="cdrStatus" style="font-size:11px;color:var(--muted-2)">Using embedded data</span>
-    <span style="font-size:12px;color:var(--muted);margin-left:12px">View</span>
-    <select id="cdrView" onchange="cdrRender()">
-      <option value="tl">TL Level</option>
-      <option value="agent">Agent Level</option>
-    </select>
-    <span style="font-size:12px;color:var(--muted);margin-left:8px">TL</span>
-    <select id="cdrTL" onchange="cdrRender()">
-      <option value="ALL">All TLs</option>
-    </select>
-    <span style="font-size:12px;color:var(--muted);margin-left:8px">Maturity</span>
-    <select id="cdrMat" onchange="cdrRender()">
-      <option value="ALL">All</option>
-      <option value="M0">M0</option>
-      <option value="M1+">M1+</option>
-      <option value="M2+">M2+</option>
-      <option value="M6+">M6+</option>
-    </select>
-  </div>
-  <div id="cdr-table"></div>
+
+  <div id="cp-tl-strip" class="cp-tl-strip"></div>
+
+  <div class="cp-divider">All Agents</div>
+  <div class="cp-tl-filter" id="cpTLFilter"></div>
+  <div id="cp-agent-table"></div>
 </section>
 
 <script>
 (function() {
-  var CDR_DATA = [{"agent":"Akash K","calls":40,"connected":17,"totalSecs":2405,"connSecs":1830},{"agent":"Aslam H","calls":9,"connected":5,"totalSecs":591,"connSecs":498},{"agent":"Bijoy F","calls":11,"connected":4,"totalSecs":539,"connSecs":298},{"agent":"Faizal B","calls":43,"connected":19,"totalSecs":2907,"connSecs":2071},{"agent":"Ishrath G","calls":120,"connected":40,"totalSecs":5206,"connSecs":3249},{"agent":"Misbahul H","calls":1,"connected":0,"totalSecs":37,"connSecs":0},{"agent":"Nisha Y","calls":3,"connected":0,"totalSecs":84,"connSecs":0},{"agent":"Prity T","calls":9,"connected":5,"totalSecs":436,"connSecs":342},{"agent":"Ranjan P","calls":13,"connected":13,"totalSecs":2025,"connSecs":2025},{"agent":"Zacharias M","calls":5,"connected":3,"totalSecs":149,"connSecs":97}];
 
-  window.CDR_DATA = CDR_DATA;
+  /* ── Embedded fallback snapshot (replaced on each GitHub push) ── */
+  var CP_SNAPSHOT = {"ts": "Jun 8 2026, 03:46 PM IST", "date": "2026-06-08", "agents": [{"agent": "Divya S", "manager": "—", "dials": 193, "unique": 150, "totalSec": 6257, "intSec": 3349}, {"agent": "Vikash K", "manager": "—", "dials": 180, "unique": 85, "totalSec": 7849, "intSec": 5090}, {"agent": "Siddharth S", "manager": "Antaryami", "dials": 172, "unique": 102, "totalSec": 8743, "intSec": 6247}, {"agent": "Ayaan P", "manager": "—", "dials": 167, "unique": 69, "totalSec": 8913, "intSec": 6725}, {"agent": "Ishrath G", "manager": "Aman", "dials": 167, "unique": 103, "totalSec": 6067, "intSec": 3709}, {"agent": "Khushboo R", "manager": "Antaryami", "dials": 150, "unique": 76, "totalSec": 5328, "intSec": 3151}, {"agent": "Anisa R", "manager": "Antaryami", "dials": 146, "unique": 72, "totalSec": 5701, "intSec": 3899}, {"agent": "Arifa K", "manager": "Antaryami", "dials": 144, "unique": 65, "totalSec": 8245, "intSec": 6322}, {"agent": "kabita D", "manager": "Aman", "dials": 141, "unique": 52, "totalSec": 7991, "intSec": 6225}, {"agent": "Bibi H", "manager": "Antaryami", "dials": 141, "unique": 92, "totalSec": 6362, "intSec": 4197}, {"agent": "Saraswathi K", "manager": "Antaryami", "dials": 140, "unique": 88, "totalSec": 6549, "intSec": 4386}, {"agent": "Rohit P", "manager": "—", "dials": 132, "unique": 109, "totalSec": 4631, "intSec": 2454}, {"agent": "Hassan S", "manager": "Antaryami", "dials": 130, "unique": 31, "totalSec": 4468, "intSec": 2738}, {"agent": "Kapeesh R", "manager": "Antaryami", "dials": 114, "unique": 65, "totalSec": 8641, "intSec": 7211}, {"agent": "Abdul RA", "manager": "Antaryami", "dials": 107, "unique": 67, "totalSec": 4014, "intSec": 2516}, {"agent": "Manjunath S", "manager": "Chetana", "dials": 101, "unique": 41, "totalSec": 4595, "intSec": 3190}, {"agent": "Prathamesh B", "manager": "Chetana", "dials": 88, "unique": 42, "totalSec": 3138, "intSec": 1996}, {"agent": "Ashwin S", "manager": "Aman", "dials": 85, "unique": 47, "totalSec": 3377, "intSec": 2437}, {"agent": "Umaira F", "manager": "—", "dials": 83, "unique": 61, "totalSec": 4337, "intSec": 3351}, {"agent": "Pooja T", "manager": "Chetana", "dials": 78, "unique": 58, "totalSec": 3531, "intSec": 2072}, {"agent": "Adnan M", "manager": "Antaryami", "dials": 73, "unique": 44, "totalSec": 3866, "intSec": 3094}, {"agent": "Kaneez F", "manager": "Aman", "dials": 72, "unique": 55, "totalSec": 3565, "intSec": 2716}, {"agent": "Sumitra C", "manager": "Chetana", "dials": 72, "unique": 50, "totalSec": 2958, "intSec": 1960}, {"agent": "Farah D", "manager": "—", "dials": 71, "unique": 56, "totalSec": 3097, "intSec": 2261}, {"agent": "Nisha Y", "manager": "Chetana", "dials": 67, "unique": 46, "totalSec": 2101, "intSec": 1289}, {"agent": "Akash K", "manager": "Antaryami", "dials": 65, "unique": 49, "totalSec": 2863, "intSec": 2034}, {"agent": "Ankit R", "manager": "Aman", "dials": 57, "unique": 35, "totalSec": 2762, "intSec": 1943}, {"agent": "Bijoy F", "manager": "Antaryami", "dials": 55, "unique": 54, "totalSec": 1536, "intSec": 853}, {"agent": "Ruby K", "manager": "—", "dials": 53, "unique": 37, "totalSec": 2108, "intSec": 1585}, {"agent": "Priyanka B", "manager": "Chetana", "dials": 52, "unique": 44, "totalSec": 2173, "intSec": 1571}, {"agent": "Prity T", "manager": "Antaryami", "dials": 41, "unique": 35, "totalSec": 1480, "intSec": 826}, {"agent": "Vidya C", "manager": "Aman", "dials": 38, "unique": 28, "totalSec": 1037, "intSec": 562}, {"agent": "Reshma J", "manager": "Chetana", "dials": 34, "unique": 29, "totalSec": 1766, "intSec": 1241}, {"agent": "Ranjan P", "manager": "Aman", "dials": 29, "unique": 20, "totalSec": 754, "intSec": 459}, {"agent": "Rizwan M", "manager": "Antaryami", "dials": 28, "unique": 12, "totalSec": 1220, "intSec": 899}, {"agent": "Preeti P", "manager": "Chetana", "dials": 28, "unique": 23, "totalSec": 1726, "intSec": 1353}, {"agent": "Aslam H", "manager": "Aman", "dials": 26, "unique": 20, "totalSec": 1699, "intSec": 1534}, {"agent": "Zaiba T", "manager": "Antaryami", "dials": 25, "unique": 21, "totalSec": 1056, "intSec": 762}, {"agent": "Misbahul H", "manager": "Aman", "dials": 20, "unique": 18, "totalSec": 900, "intSec": 721}, {"agent": "Naveed S", "manager": "Antaryami", "dials": 16, "unique": 14, "totalSec": 357, "intSec": 76}, {"agent": "Fathima K", "manager": "Antaryami", "dials": 15, "unique": 13, "totalSec": 616, "intSec": 421}, {"agent": "Aarti K", "manager": "Chetana", "dials": 14, "unique": 13, "totalSec": 526, "intSec": 296}, {"agent": "Asha S", "manager": "Antaryami", "dials": 10, "unique": 10, "totalSec": 233, "intSec": 119}, {"agent": "Raihan A", "manager": "Antaryami", "dials": 6, "unique": 6, "totalSec": 697, "intSec": 667}, {"agent": "Zacharias M", "manager": "Aman", "dials": 3, "unique": 1, "totalSec": 18, "intSec": 0}, {"agent": "Shabab Z", "manager": "Antaryami", "dials": 3, "unique": 3, "totalSec": 550, "intSec": 513}, {"agent": "Nandini G", "manager": "Chetana", "dials": 3, "unique": 2, "totalSec": 76, "intSec": 0}, {"agent": "Akbar T", "manager": "Antaryami", "dials": 2, "unique": 1, "totalSec": 0, "intSec": 0}, {"agent": "Sneha G", "manager": "—", "dials": 2, "unique": 1, "totalSec": 30, "intSec": 0}, {"agent": "Mubashir R", "manager": "Antaryami", "dials": 2, "unique": 1, "totalSec": 35, "intSec": 0}, {"agent": "Naveen L", "manager": "Aman", "dials": 2, "unique": 2, "totalSec": 78, "intSec": 78}, {"agent": "Akash N", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 39, "intSec": 0}, {"agent": "Akshay H", "manager": "Antaryami", "dials": 2, "unique": 2, "totalSec": 55, "intSec": 0}, {"agent": "Sonali K", "manager": "Chetana", "dials": 1, "unique": 1, "totalSec": 374, "intSec": 374}, {"agent": "James G", "manager": "—", "dials": 1, "unique": 1, "totalSec": 34, "intSec": 34}, {"agent": "Poornima K", "manager": "Chetana", "dials": 1, "unique": 1, "totalSec": 30, "intSec": 0}, {"agent": "Rustam M", "manager": "Antaryami", "dials": 1, "unique": 1, "totalSec": 0, "intSec": 0}, {"agent": "Omprakash T", "manager": "Antaryami", "dials": 1, "unique": 1, "totalSec": 30, "intSec": 0}, {"agent": "Shakshi V", "manager": "Aman", "dials": 1, "unique": 1, "totalSec": 30, "intSec": 0}]};
 
-  window.cdrLoadLive = function() {
-    var status = document.getElementById('cdrStatus');
-    if (status) status.textContent = 'Loading CDR data...';
+  window.CP_DATA = CP_SNAPSHOT;
 
-    /* Ensure attendance is loaded first */
-    function fetchCDR() {
-      var cbName = '__cdrCallback_' + Date.now();
-      var url = 'https://script.google.com/macros/s/AKfycbyuaCrXsPBikkxlGsec4CvNmVKFFkr6AO1NBqjbxn21uIdGDvyBfUmP5JKdY0rU2oTP/exec?action=cdr&callback=' + cbName;
-      window[cbName] = function(payload) {
-        delete window[cbName];
-        if (payload && Array.isArray(payload.cdr) && payload.cdr.length) {
-          CDR_DATA = payload.cdr;
-          window.CDR_DATA = CDR_DATA;
-          if (status) status.textContent = 'Loaded ' + CDR_DATA.length + ' agents \u2713';
-        } else {
-          if (status) status.textContent = 'No CDR data returned' + (payload && payload.error ? ' \u2014 ' + payload.error : '');
-        }
-        cdrRender();
-      };
-      var s = document.createElement('script');
-      s.src = url;
-      s.onerror = function() {
-        if (status) status.textContent = 'Failed to load CDR data';
-        delete window[cbName];
-      };
-      document.body.appendChild(s);
-    }
-
-    if (typeof ATTENDANCE === 'undefined' || !ATTENDANCE.length || typeof PERF_LOAD_STATE === 'undefined' || PERF_LOAD_STATE !== 'ok') {
-      if (status) status.textContent = 'Loading agent roster + CDR data...';
-      loadPerfData({ onDone: fetchCDR });
-    } else {
-      fetchCDR();
-    }
+  /* ── Colours per manager ── */
+  var MGR_COLORS = {
+    'Antaryami': '#60a5fa',
+    'Chetana':   '#f472b6',
+    'Aman':      '#4ade80',
+    '—':         '#6b7280'
   };
 
-  function fmtDur(secs) {
-    var s = Math.round(secs);
-    var m = Math.floor(s / 60);
+  function mgrColor(m) { return MGR_COLORS[m] || '#a78bfa'; }
+
+  /* ── Format seconds as H:MM:SS ── */
+  function fmtSec(s) {
+    s = Math.round(s || 0);
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
     var sec = s % 60;
-    var h = Math.floor(m / 60);
-    m = m % 60;
     if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
     return m + ':' + String(sec).padStart(2,'0');
   }
 
-  function getAgentTL(name) {
-    if (typeof ATTENDANCE === 'undefined' || !ATTENDANCE.length) return '—';
-    /* CDR uses short "First L" names — resolve to canonical full name before lookup */
-    var resolved = (typeof canonicalName === 'function') ? canonicalName(name) : name;
-    var nl = resolved ? resolved.toLowerCase() : name.toLowerCase();
-    var raw = name.toLowerCase();
-    for (var i = 0; i < ATTENDANCE.length; i++) {
-      var al = ATTENDANCE[i].agent.toLowerCase();
-      if (al === nl || al === raw) return ATTENDANCE[i].tl;
-    }
-    return '—';
-  }
-
-  function getAgentMat(name) {
-    if (typeof ATTENDANCE === 'undefined' || !ATTENDANCE.length) return '—';
-    var resolved = (typeof canonicalName === 'function') ? canonicalName(name) : name;
-    var nl = resolved ? resolved.toLowerCase() : name.toLowerCase();
-    var raw = name.toLowerCase();
-    for (var i = 0; i < ATTENDANCE.length; i++) {
-      var al = ATTENDANCE[i].agent.toLowerCase();
-      if (al === nl || al === raw) return ATTENDANCE[i].maturity || '—';
-    }
-    return '—';
-  }
-
-  window.cdrRender = function() {
-    /* Rebuild TL dropdown from ATTENDANCE each render so names stay in sync */
-    (function() {
-      var sel = document.getElementById('cdrTL');
-      if (!sel) return;
-      var prev = sel.value;
-      var tlList = [];
-      var seen = {};
-      if (typeof ATTENDANCE !== 'undefined' && ATTENDANCE.length) {
-        ATTENDANCE.forEach(function(a) {
-          if (a.tl && !seen[a.tl]) { seen[a.tl] = true; tlList.push(a.tl); }
-        });
-      }
-      tlList.sort();
-      /* Rebuild options */
-      sel.innerHTML = '<option value="ALL">All TLs</option>';
-      tlList.forEach(function(t) {
-        var opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = t;
-        sel.appendChild(opt);
-      });
-      /* Restore previous selection if still valid */
-      if (prev !== 'ALL') {
-        var found = false;
-        for (var i = 0; i < sel.options.length; i++) {
-          if (sel.options[i].value === prev) { sel.value = prev; found = true; break; }
-        }
-        if (!found) sel.value = 'ALL';
-      }
-    })();
-
-    var view = document.getElementById('cdrView').value;
-    var tlFilter = document.getElementById('cdrTL').value;
-    var matFilter = document.getElementById('cdrMat').value;
-
-    var data = CDR_DATA.slice();
-    if (tlFilter !== 'ALL') data = data.filter(function(d) { return getAgentTL(d.agent) === tlFilter; });
-    if (matFilter !== 'ALL') data = data.filter(function(d) { return getAgentMat(d.agent) === matFilter; });
-
+  /* ── Render TL summary strip ── */
+  function renderTLStrip(agents) {
+    var mgrs = {};
+    agents.forEach(function(a) {
+      var m = a.manager || '—';
+      if (!mgrs[m]) mgrs[m] = {agents:0, dials:0, unique:0, totalSec:0};
+      mgrs[m].agents++;
+      mgrs[m].dials += a.dials;
+      mgrs[m].unique += a.unique;
+      mgrs[m].totalSec += a.totalSec;
+    });
     var html = '';
-    if (view === 'agent') {
-      data.sort(function(a,b) { return b.totalSecs - a.totalSecs; });
-      html += '<table class="cdr-tbl"><thead><tr>';
-      html += '<th style="width:4%">#</th><th style="text-align:left;width:16%">Agent</th><th style="width:10%">TL</th><th style="width:8%">Maturity</th>';
-      html += '<th style="color:#7dd3fc">Total Calls</th>';
-      html += '<th style="color:#4ade80">Connected</th>';
-      html += '<th>Conn %</th>';
-      html += '<th style="color:#fbbf24">Total Call Dur</th>';
-      html += '<th style="color:#fb923c">Avg TT / Call</th>';
-      html += '<th style="color:#a78bfa">Avg TT / Conn Call</th>';
-      html += '</tr></thead><tbody>';
+    Object.keys(mgrs).sort().forEach(function(m) {
+      var d = mgrs[m];
+      var avg = d.agents ? fmtSec(d.totalSec / d.agents) : '—';
+      html += '<div class="cp-tl-card">';
+      html += '<div class="cp-tl-name"><span class="cp-tl-dot" style="background:' + mgrColor(m) + '"></span>' + m + '</div>';
+      html += '<div class="cp-tl-grid">';
+      html += '<div class="cp-tl-stat"><div class="cp-tl-lbl">Agents</div><div class="cp-tl-val">' + d.agents + '</div></div>';
+      html += '<div class="cp-tl-stat"><div class="cp-tl-lbl">Dials</div><div class="cp-tl-val">' + d.dials.toLocaleString() + '</div></div>';
+      html += '<div class="cp-tl-stat"><div class="cp-tl-lbl">Total TT</div><div class="cp-tl-val tt">' + fmtSec(d.totalSec) + '</div></div>';
+      html += '<div class="cp-tl-stat"><div class="cp-tl-lbl">Avg TT / Agent</div><div class="cp-tl-val avg">' + avg + '</div></div>';
+      html += '</div></div>';
+    });
+    var el = document.getElementById('cp-tl-strip');
+    if (el) el.innerHTML = html;
 
-      var totCalls=0, totConn=0, totSecs=0, totConnSecs=0;
-      data.forEach(function(d, i) {
-        var tl = getAgentTL(d.agent);
-        var mat = getAgentMat(d.agent);
-        var connPct = d.calls ? Math.round(d.connected/d.calls*100)+'%' : '—';
-        var avgAll = d.calls ? fmtDur(d.totalSecs/d.calls) : '—';
-        var avgConn = d.connected ? fmtDur(d.connSecs/d.connected) : '—';
-        html += '<tr>';
-        html += '<td style="color:var(--muted-2)">' + (i+1) + '</td>';
-        html += '<td style="font-weight:700;font-size:14px">' + d.agent + '</td>';
-        html += '<td style="color:var(--muted-2);font-size:12px">' + tl + '</td>';
-        html += '<td style="color:var(--muted-2);font-size:12px">' + mat + '</td>';
-        html += '<td style="color:#7dd3fc;font-weight:600">' + d.calls + '</td>';
-        html += '<td style="color:#4ade80;font-weight:600">' + d.connected + '</td>';
-        html += '<td>' + connPct + '</td>';
-        html += '<td style="color:#fbbf24;font-weight:700">' + fmtDur(d.totalSecs) + '</td>';
-        html += '<td style="color:#fb923c">' + avgAll + '</td>';
-        html += '<td style="color:#a78bfa">' + avgConn + '</td>';
-        html += '</tr>';
-        totCalls+=d.calls; totConn+=d.connected; totSecs+=d.totalSecs; totConnSecs+=d.connSecs;
+    /* Rebuild TL filter buttons */
+    var filterEl = document.getElementById('cpTLFilter');
+    if (filterEl) {
+      var btns = '<button class="cp-btn-ghost active" onclick="cpFilterTL(\'ALL\',this)">All</button>';
+      Object.keys(mgrs).sort().forEach(function(m) {
+        btns += '<button class="cp-btn-ghost" onclick="cpFilterTL(\'' + m + '\',this)">' + m + '</button>';
       });
-
-      html += '<tr class="cdr-total">';
-      html += '<td></td><td>Total (' + data.length + ' agents)</td><td></td><td></td>';
-      html += '<td style="color:#7dd3fc">' + totCalls + '</td>';
-      html += '<td style="color:#4ade80">' + totConn + '</td>';
-      html += '<td>' + (totCalls ? Math.round(totConn/totCalls*100)+'%' : '—') + '</td>';
-      html += '<td style="color:#fbbf24">' + fmtDur(totSecs) + '</td>';
-      html += '<td style="color:#fb923c">' + (totCalls ? fmtDur(totSecs/totCalls) : '—') + '</td>';
-      html += '<td style="color:#a78bfa">' + (totConn ? fmtDur(totConnSecs/totConn) : '—') + '</td>';
-      html += '</tr>';
-      html += '</tbody></table>';
-
-    } else {
-      /* TL Level view — derive TL list from ATTENDANCE; fall back to CDR_DATA agent lookup */
-      var tlNames;
-      if (tlFilter !== 'ALL') {
-        tlNames = [tlFilter];
-      } else {
-        var tlSet2 = [];
-        var tlSeen2 = {};
-        if (typeof ATTENDANCE !== 'undefined' && ATTENDANCE.length) {
-          ATTENDANCE.forEach(function(a) {
-            if (a.tl && !tlSeen2[a.tl]) { tlSeen2[a.tl] = true; tlSet2.push(a.tl); }
-          });
-        }
-        /* Fallback: derive from CDR_DATA agent names via getAgentTL */
-        if (!tlSet2.length) {
-          CDR_DATA.forEach(function(d) {
-            var t = getAgentTL(d.agent);
-            if (t && t !== '\u2014' && !tlSeen2[t]) { tlSeen2[t] = true; tlSet2.push(t); }
-          });
-        }
-        tlNames = tlSet2.sort();
-      }
-
-      html += '<table class="cdr-tbl"><thead><tr>';
-      html += '<th style="text-align:left;width:16%">Team Lead</th>';
-      html += '<th>Agents</th>';
-      html += '<th style="color:#7dd3fc">Total Calls</th>';
-      html += '<th style="color:#4ade80">Connected</th>';
-      html += '<th>Conn %</th>';
-      html += '<th style="color:#fbbf24">Total Call Dur</th>';
-      html += '<th style="color:#fb923c">Avg TT / Agent</th>';
-      html += '<th style="color:#a78bfa">Avg TT / Conn Call</th>';
-      html += '</tr></thead><tbody>';
-
-      var gCalls=0, gConn=0, gSecs=0, gConnSecs=0, gAgents=0;
-      tlNames.forEach(function(tl) {
-        var tlData = CDR_DATA.filter(function(d) {
-          var match = getAgentTL(d.agent) === tl;
-          if (matFilter !== 'ALL') match = match && getAgentMat(d.agent) === matFilter;
-          return match;
-        });
-        var nAgents = tlData.length;
-        var tCalls = tlData.reduce(function(s,d){return s+d.calls},0);
-        var tConn = tlData.reduce(function(s,d){return s+d.connected},0);
-        var tSecs = tlData.reduce(function(s,d){return s+d.totalSecs},0);
-        var tConnSecs = tlData.reduce(function(s,d){return s+d.connSecs},0);
-
-        html += '<tr style="height:48px">';
-        html += '<td style="font-size:16px">' + tl + '</td>';
-        html += '<td style="color:var(--muted)">' + nAgents + '</td>';
-        html += '<td style="color:#7dd3fc;font-weight:700;font-size:16px">' + tCalls + '</td>';
-        html += '<td style="color:#4ade80;font-weight:700;font-size:16px">' + tConn + '</td>';
-        html += '<td>' + (tCalls ? Math.round(tConn/tCalls*100)+'%' : '—') + '</td>';
-        html += '<td style="color:#fbbf24;font-weight:700">' + fmtDur(tSecs) + '</td>';
-        html += '<td style="color:#fb923c;font-weight:700">' + (nAgents ? fmtDur(tSecs/nAgents) : '—') + '</td>';
-        html += '<td style="color:#a78bfa">' + (tConn ? fmtDur(tConnSecs/tConn) : '—') + '</td>';
-        html += '</tr>';
-        gCalls+=tCalls; gConn+=tConn; gSecs+=tSecs; gConnSecs+=tConnSecs; gAgents+=nAgents;
-      });
-
-      html += '<tr class="cdr-total">';
-      html += '<td>Total</td>';
-      html += '<td>' + gAgents + '</td>';
-      html += '<td style="color:#7dd3fc">' + gCalls + '</td>';
-      html += '<td style="color:#4ade80">' + gConn + '</td>';
-      html += '<td>' + (gCalls ? Math.round(gConn/gCalls*100)+'%' : '—') + '</td>';
-      html += '<td style="color:#fbbf24">' + fmtDur(gSecs) + '</td>';
-      html += '<td style="color:#fb923c">' + (gAgents ? fmtDur(gSecs/gAgents) : '—') + '</td>';
-      html += '<td style="color:#a78bfa">' + (gConn ? fmtDur(gConnSecs/gConn) : '—') + '</td>';
-      html += '</tr></tbody></table>';
+      filterEl.innerHTML = btns;
     }
+  }
 
-    document.getElementById('cdr-table').innerHTML = html;
+  /* ── Render agent table ── */
+  var _cpActiveTL = 'ALL';
+  window.cpFilterTL = function(tl, btn) {
+    _cpActiveTL = tl;
+    var btns = document.querySelectorAll('#cpTLFilter .cp-btn-ghost');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    renderAgentTable(window.CP_DATA.agents);
   };
+
+  /* ── Agent exclusion (localStorage) ── */
+  function cpGetExcluded() {
+    try { return JSON.parse(localStorage.getItem('cp_excluded') || '[]'); } catch(e) { return []; }
+  }
+  function cpSetExcluded(arr) {
+    try { localStorage.setItem('cp_excluded', JSON.stringify(arr)); } catch(e) {}
+  }
+  function cpCleanExcluded(agents) {
+    var names = agents.map(function(a){ return a.agent; });
+    var exc = cpGetExcluded().filter(function(n){ return names.indexOf(n) > -1; });
+    cpSetExcluded(exc);
+    return exc;
+  }
+  window.cpToggleAgent = function(agentName) {
+    var exc = cpGetExcluded();
+    var idx = exc.indexOf(agentName);
+    if (idx > -1) exc.splice(idx, 1); else exc.push(agentName);
+    cpSetExcluded(exc);
+    renderAgentTable(window.CP_DATA.agents);
+    var active = window.CP_DATA.agents.filter(function(a){ return exc.indexOf(a.agent) === -1; });
+    window.CDR_DATA = active.map(function(a){
+      return { agent: a.agent, calls: a.dials, connected: 0, totalSecs: a.totalSec, connSecs: a.intSec };
+    });
+  };
+
+  function renderAgentTable(agents) {
+    var data = agents.slice();
+    if (_cpActiveTL !== 'ALL') data = data.filter(function(a) { return a.manager === _cpActiveTL; });
+    data.sort(function(a,b) { return b.totalSec - a.totalSec; });
+
+    var exc = cpCleanExcluded(agents);
+    var totDials=0, totUnique=0, totSec=0, totIntSec=0;
+    var html = '<table class="cp-tbl"><thead><tr>';
+    html += '<th>#</th>';
+    html += '<th>Agent</th>';
+    html += '<th>Manager</th>';
+    html += '<th style="color:#7dd3fc">Dials</th>';
+    html += '<th style="color:#4ade80">Unique Leads</th>';
+    html += '<th style="color:#fbbf24">Total TT</th>';
+    html += '<th style="color:#fb923c">Interacted TT</th>';
+    html += '</tr></thead><tbody>';
+
+    data.forEach(function(a, i) {
+      var isExc = exc.indexOf(a.agent) > -1;
+      if (!isExc) { totDials += a.dials; totUnique += a.unique; totSec += a.totalSec; totIntSec += a.intSec; }
+      var color = mgrColor(a.manager);
+      var trackCls = isExc ? 'cp-toggle-track' : 'cp-toggle-track on';
+      var _agentIdx = window.CP_DATA.agents.indexOf(a);
+      var toggle = '<span class="cp-toggle" onclick="cpToggleAgent(window.CP_DATA.agents[' + _agentIdx + '].agent)">'
+        + '<span class="' + trackCls + '"><span class="cp-toggle-thumb"></span></span></span>';
+      html += '<tr' + (isExc ? ' class="cp-excluded"' : '') + '>';
+      html += '<td>' + (i+1) + '</td>';
+      html += '<td>' + a.agent + toggle + '</td>';
+      html += '<td><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:' + color + '22;color:' + color + '">' + (a.manager||'—') + '</span></td>';
+      html += '<td style="color:#7dd3fc;font-weight:600">' + a.dials + '</td>';
+      html += '<td style="color:#4ade80;font-weight:600">' + a.unique + '</td>';
+      html += '<td style="color:#fbbf24;font-weight:700">' + fmtSec(a.totalSec) + '</td>';
+      html += '<td style="color:#fb923c">' + fmtSec(a.intSec) + '</td>';
+      html += '</tr>';
+    });
+
+    var activeCount = data.length - exc.filter(function(n){ return data.some(function(a){ return a.agent===n; }); }).length;
+    html += '<tr class="cp-total">';
+    html += '<td></td><td>Total (' + activeCount + ' active / ' + data.length + ')</td><td></td>';
+    html += '<td style="color:#7dd3fc">' + totDials.toLocaleString() + '</td>';
+    html += '<td style="color:#4ade80">' + totUnique.toLocaleString() + '</td>';
+    html += '<td style="color:#fbbf24">' + fmtSec(totSec) + '</td>';
+    html += '<td style="color:#fb923c">' + fmtSec(totIntSec) + '</td>';
+    html += '</tr></tbody></table>';
+
+    var el = document.getElementById('cp-agent-table');
+    if (el) el.innerHTML = html;
+  }
+
+  /* ── Full render ── */
+  function cpRender() {
+    var d = window.CP_DATA;
+    if (!d || !d.agents || !d.agents.length) {
+      var el = document.getElementById('cp-agent-table');
+      if (el) el.innerHTML = '<div class="cp-empty">No data — hit Refresh to load live data</div>';
+      return;
+    }
+    var meta = document.getElementById('cpMeta');
+    if (meta) meta.textContent = 'Data for ' + (d.date||'today') + ' \u00b7 Last updated: ' + (d.ts||'—') + ' \u00b7 source: ems.cdc';
+    /* Bridge to CDR_DATA format so Command Center TT calculations work */
+    window.CDR_DATA = d.agents.map(function(a) {
+      return { agent: a.agent, calls: a.dials, connected: 0, totalSecs: a.totalSec, connSecs: a.intSec };
+    });
+    renderTLStrip(d.agents);
+    renderAgentTable(d.agents);
+  }
+
+  /* ── Databricks fetch ── */
+  var DB_HOST = 'dbc-f49613fc-9586.cloud.databricks.com';
+  var DB_PATH = '/sql/1.0/warehouses/3f8421c60d299889';
+  var DB_QUERY = 'WITH users AS (SELECT _id AS user_id, get_json_object(_doc,\'$.name\') AS name FROM (SELECT *,ROW_NUMBER() OVER (PARTITION BY _id ORDER BY dms_ts DESC) AS rn FROM ems.cdc.users) WHERE rn=1 AND Op<>\'D\'),calls AS (SELECT get_json_object(_doc,\'$.owner._id.$oid\') AS owner_id,get_json_object(_doc,\'$.payload.lead_phone\') AS lead_phone,try_cast(get_json_object(_doc,\'$.payload.duration\') AS INT) AS duration_sec,COALESCE(to_date(try_cast(get_json_object(_doc,\'$.payload.start_stamp\') AS TIMESTAMP)),to_date(timestamp_millis(CAST(get_json_object(_doc,\'$.occurredAt\') AS BIGINT)))) AS call_date FROM (SELECT *,ROW_NUMBER() OVER (PARTITION BY _id ORDER BY dms_ts DESC) AS rn FROM ems.cdc.enriched_data) WHERE rn=1 AND Op<>\'D\'),agg AS (SELECT c.call_date,u.name AS agent_name,COUNT(*) AS total_dials,COUNT(DISTINCT c.lead_phone) AS unique_leads,SUM(COALESCE(c.duration_sec,0)) AS total_sec,SUM(CASE WHEN call_status=\'answered\' THEN COALESCE(c.duration_sec,0) ELSE 0 END) AS int_sec FROM calls c JOIN users u ON c.owner_id=u.user_id WHERE c.call_date=CURRENT_DATE() GROUP BY c.call_date,u.name) SELECT a.call_date,COALESCE(m.team_lead,\'—\') AS manager,a.agent_name,a.total_dials,a.unique_leads,a.total_sec,a.int_sec FROM agg a LEFT JOIN main.analytics.tele_tl_mapping m ON trim(a.agent_name)=trim(m.agent_name) ORDER BY a.total_dials DESC';
+
+  function cpGetToken() { try { return localStorage.getItem('cp_db_token') || ''; } catch(e) { return ''; } }
+  function cpGetGHToken() { try { return localStorage.getItem('cp_gh_token') || ''; } catch(e) { return ''; } }
+
+  window.cpFetch = function() {
+    var token = cpGetToken();
+    if (!token) { cpShowSetup(); return; }
+    var btn = document.getElementById('cpRefreshBtnCdr');
+    var status = document.getElementById('cpStatus');
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = 'Fetching from Databricks\u2026';
+
+    fetch('https://' + DB_HOST + '/api/2.0/sql/statements', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ warehouse_id: '3f8421c60d299889', statement: DB_QUERY, wait_timeout: '30s' })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.status && res.status.state === 'SUCCEEDED') {
+        cpParseAndSave(res);
+      } else if (res.status && res.status.state === 'PENDING') {
+        cpPoll(res.statement_id, token);
+      } else {
+        if (status) status.textContent = 'Error: ' + ((res.status && res.status.error && res.status.error.message) || 'unknown');
+        if (btn) btn.disabled = false;
+      }
+    })
+    .catch(function(e) {
+      if (status) status.textContent = 'Fetch failed: ' + e.message;
+      if (btn) btn.disabled = false;
+    });
+  };
+
+  function cpPoll(stmtId, token) {
+    var status = document.getElementById('cpStatus');
+    if (status) status.textContent = 'Waiting for query\u2026';
+    setTimeout(function() {
+      fetch('https://' + DB_HOST + '/api/2.0/sql/statements/' + stmtId, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.status && res.status.state === 'SUCCEEDED') {
+          cpParseAndSave(res);
+        } else if (res.status && res.status.state === 'PENDING' || (res.status && res.status.state === 'RUNNING')) {
+          cpPoll(stmtId, token);
+        } else {
+          if (status) status.textContent = 'Query failed';
+          var btn = document.getElementById('cpRefreshBtnCdr');
+          if (btn) btn.disabled = false;
+        }
+      });
+    }, 2000);
+  }
+
+  function cpParseAndSave(res) {
+    var btn = document.getElementById('cpRefreshBtnCdr');
+    var status = document.getElementById('cpStatus');
+    try {
+      var rows = res.result.data_array || [];
+      var agents = rows.map(function(r) {
+        return {
+          agent:    r[2] || '',
+          manager:  r[1] || '—',
+          dials:    parseInt(r[3]) || 0,
+          unique:   parseInt(r[4]) || 0,
+          totalSec: parseInt(r[5]) || 0,
+          intSec:   parseInt(r[6]) || 0
+        };
+      });
+      var now = new Date();
+      var ts = now.toLocaleString('en-IN', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      var dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+      window.CP_DATA = { ts: ts, date: dateStr, agents: agents };
+      if (status) status.textContent = 'Updated ' + ts + ' \u2713';
+      cpRender();
+      cpPushToGitHub(agents, ts, dateStr);
+    } catch(e) {
+      if (status) status.textContent = 'Parse error: ' + e.message;
+    }
+    if (btn) btn.disabled = false;
+  }
+
+  /* ── GitHub push ── */
+  function cpPushToGitHub(agents, ts, dateStr) {
+    var ghToken = cpGetGHToken();
+    if (!ghToken) return;
+    var status = document.getElementById('cpStatus');
+
+    /* First get current file SHA */
+    fetch('https://api.github.com/repos/mayanksahu9494/Snabbitconsole/contents/index.html', {
+      headers: { 'Authorization': 'token ' + ghToken, 'Accept': 'application/vnd.github.v3+json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(meta) {
+      if (!meta.sha || !meta.content) { if (status) status.textContent += ' (GitHub: could not read file)'; return; }
+
+      /* Decode current HTML */
+      var currentHTML = atob(meta.content.replace(/\n/g,''));
+
+      /* Replace snapshot inside the HTML */
+      var snapshotStr = 'var CP_SNAPSHOT = ' + JSON.stringify({ts:ts, date:dateStr, agents:agents}) + ';';
+      var updated = currentHTML.replace(/var CP_SNAPSHOT = \{[\s\S]*?\};/, snapshotStr);
+      if (updated === currentHTML) { if (status) status.textContent += ' (snapshot marker not found)'; return; }
+
+      /* Commit back */
+      fetch('https://api.github.com/repos/mayanksahu9494/Snabbitconsole/contents/index.html', {
+        method: 'PUT',
+        headers: { 'Authorization': 'token ' + ghToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: 'chore: update calling snapshot ' + dateStr + ' ' + ts,
+          content: btoa(unescape(encodeURIComponent(updated))),
+          sha: meta.sha
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.commit) {
+          if (status) status.textContent += ' \u2022 Pushed to GitHub \u2713';
+        } else {
+          if (status) status.textContent += ' \u2022 GitHub push failed';
+        }
+      });
+    })
+    .catch(function(e) {
+      if (status) status.textContent += ' (GitHub error: ' + e.message + ')';
+    });
+  }
+
+  /* ── Setup modal ── */
+  window.cpShowSetup = function() {
+    var existing = document.getElementById('cpSetupOverlay');
+    if (existing) existing.remove();
+    var dbToken = cpGetToken();
+    var ghToken = cpGetGHToken();
+    var div = document.createElement('div');
+    div.id = 'cpSetupOverlay';
+    div.className = 'cp-setup-overlay';
+    div.innerHTML = '<div class="cp-setup-box">'
+      + '<div class="cp-setup-title">&#9881; Calling Data Setup</div>'
+      + '<div class="cp-setup-sub">Tokens are stored only in your browser. Never shared. Required once.</div>'
+      + '<div class="cp-setup-label">Databricks Token (dapi...)</div>'
+      + '<input class="cp-setup-input" id="cpDbInput" type="password" placeholder="dapi..." value="' + (dbToken||'') + '">'
+      + '<div class="cp-setup-label">GitHub Token (ghp_ or github_pat_...)</div>'
+      + '<input class="cp-setup-input" id="cpGhInput" type="password" placeholder="github_pat_..." value="' + (ghToken||'') + '">'
+      + '<div class="cp-setup-row">'
+      + '<button class="cp-setup-save" onclick="cpSaveSetup()">Save &amp; Refresh</button>'
+      + '<button class="cp-setup-skip" onclick="document.getElementById(\'cpSetupOverlay\').remove()">Cancel</button>'
+      + '</div></div>';
+    document.body.appendChild(div);
+  };
+
+  window.cpSaveSetup = function() {
+    var db = document.getElementById('cpDbInput');
+    var gh = document.getElementById('cpGhInput');
+    if (db && db.value.trim()) { try { localStorage.setItem('cp_db_token', db.value.trim()); } catch(e){} }
+    if (gh && gh.value.trim()) { try { localStorage.setItem('cp_gh_token', gh.value.trim()); } catch(e){} }
+    var overlay = document.getElementById('cpSetupOverlay');
+    if (overlay) overlay.remove();
+    window.cpFetch();
+  };
+
+  /* ── Auto-refresh every 15 min when tab is visible ── */
+  var _cpAutoTimer = null;
+  function cpScheduleAuto() {
+    if (_cpAutoTimer) clearTimeout(_cpAutoTimer);
+    _cpAutoTimer = setTimeout(function() {
+      if (document.getElementById('view-cdr') && document.getElementById('view-cdr').style.display !== 'none') {
+        if (cpGetToken()) window.cpFetch();
+      }
+      cpScheduleAuto();
+    }, 15 * 60 * 1000);
+  }
+
+  /* ── Init ── */
+  function cpInit() {
+    cpRender();
+    cpScheduleAuto();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', cpInit);
+  } else {
+    cpInit();
+  }
+
+  /* Expose for switchView hook */
+  window.cdrRender = cpRender;
+
 })();
 </script>
 
