@@ -5541,12 +5541,6 @@ renderPerf();
   /* ---- Parse LMS rows from payload.lms ---- */
   function cpParseRows(lmsArr) {
     if (!Array.isArray(lmsArr)) return [];
-    /* DIAGNOSTIC: log the keys of the first referral row so we can find the city column */
-    var refSample = lmsArr.find(function(r){ return String(r.source||'').toUpperCase().indexOf('REFERRAL') !== -1; });
-    if (refSample) {
-      console.log('[CP] Referral row keys:', Object.keys(refSample));
-      console.log('[CP] Referral row sample:', JSON.stringify(refSample));
-    }
     return lmsArr.map(r => {
       let dt = null;
       const raw = r.createdAt || r.created_at || r.CreatedAt || '';
@@ -5816,12 +5810,15 @@ renderPerf();
     if (!sel) return;
     var cities = {};
     CP_RAW.forEach(function(r) {
-      if (r.source === 'REFERRAL' && r.city) cities[r.city] = true;
+      if (r.source === 'REFERRAL' && r.city) cities[r.city.trim().toLowerCase()] = true;
     });
     var sorted = Object.keys(cities).sort();
+    function titleCase(s) {
+      return s.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    }
     var prev = CP_FILTER_CITY;
     sel.innerHTML = '<option value="ALL">All cities</option>'
-      + sorted.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
+      + sorted.map(function(c) { return '<option value="' + c + '">' + titleCase(c) + '</option>'; }).join('');
     /* Restore previous selection if still present */
     if (prev !== 'ALL' && sorted.indexOf(prev) !== -1) { sel.value = prev; }
     else { CP_FILTER_CITY = 'ALL'; }
