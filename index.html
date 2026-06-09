@@ -5336,6 +5336,9 @@ renderPerf();
       <span style="font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Referrer</span>
       <span class="cp-chip cp-chip-on" id="cpChip1m" onclick="cpSetRefFilter('1m')">1 month+ only</span>
       <span class="cp-chip" id="cpChipAll" onclick="cpSetRefFilter('all')">All referral leads</span>
+      <span style="flex:1"></span>
+      <span style="font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">City</span>
+      <select id="cpRefCity" class="cp-filter-select" style="min-width:140px" onchange="cpOnCityChange()"><option value="ALL">All cities</option></select>
     </div>
     <div class="cp-table-wrap">
       <table class="cp-table">
@@ -5468,6 +5471,7 @@ renderPerf();
   });
   let CP_LOAD_STATE = 'idle';  /* idle | loading | done | error */
   let CP_REF_FILTER = '1m';    /* '1m' | 'all' */
+  let CP_FILTER_CITY = 'ALL';  /* referral city filter */
   let CP_ACTIVE_TAB = 'ref';
   let CP_FILTER_TEAM  = 'ALL';
   let CP_FILTER_TL    = 'ALL';
@@ -5554,6 +5558,7 @@ renderPerf();
         call_status:      (r.call_status       || r.callStatus      || '').toString().trim(),
         referrer_status:  (r.referrer_status   || r.referrerStatus  || '').toString().trim(),
         owner:            (r.owner             || '').toString().trim(),
+        city:             (r.city || r.City || r.region || r.Region || r.lead_city || r.city_name || '').toString().trim(),
         dt: (dt && !isNaN(dt)) ? dt : null,
       };
     }).filter(r => r.dt !== null);
@@ -5799,11 +5804,34 @@ renderPerf();
   }
 
   /* ---- Get filtered rows for the active tab only ---- */
+  /* ---- Populate referral city dropdown from REFERRAL rows ---- */
+  function cpPopulateCities() {
+    var sel = document.getElementById('cpRefCity');
+    if (!sel) return;
+    var cities = {};
+    CP_RAW.forEach(function(r) {
+      if (r.source === 'REFERRAL' && r.city) cities[r.city] = true;
+    });
+    var sorted = Object.keys(cities).sort();
+    var prev = CP_FILTER_CITY;
+    sel.innerHTML = '<option value="ALL">All cities</option>'
+      + sorted.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
+    /* Restore previous selection if still present */
+    if (prev !== 'ALL' && sorted.indexOf(prev) !== -1) { sel.value = prev; }
+    else { CP_FILTER_CITY = 'ALL'; }
+  }
+  function cpOnCityChange() {
+    CP_FILTER_CITY = document.getElementById('cpRefCity').value;
+    cpRender();
+  }
+  window.cpOnCityChange = cpOnCityChange;
+
   function cpActiveTabRows() {
     let rows;
     if (CP_ACTIVE_TAB === 'ref') {
       rows = CP_RAW.filter(r => r.source === 'REFERRAL');
       if (CP_REF_FILTER === '1m') rows = rows.filter(r => r.referrer_status === '1 month+');
+      if (CP_FILTER_CITY !== 'ALL') rows = rows.filter(r => r.city.toLowerCase() === CP_FILTER_CITY.toLowerCase());
     } else if (CP_ACTIVE_TAB === 'dig') {
       rows = CP_RAW.filter(r => r.source === 'DIGITAL');
     } else {
@@ -5931,6 +5959,7 @@ renderPerf();
     /* Referral */
     let refRows = CP_RAW.filter(r => r.source === 'REFERRAL');
     if (CP_REF_FILTER === '1m') refRows = refRows.filter(r => r.referrer_status === '1 month+');
+    if (CP_FILTER_CITY !== 'ALL') refRows = refRows.filter(r => r.city.toLowerCase() === CP_FILTER_CITY.toLowerCase());
     refRows = cpApplyAgentFilter(cpApplyDateFilter(refRows));
     const refBuckets = cpAggregate(refRows);
     document.getElementById('cpRefTbody').innerHTML = refBuckets.length
@@ -6049,6 +6078,7 @@ renderPerf();
                      : null;
         if (!lmsArr) throw new Error('payload.lms missing — update Apps Script to include lms key');
         CP_RAW = cpParseRows(lmsArr);
+        cpPopulateCities();
         /* Parse alignment targets from payload.lmsTargets */
         if (Array.isArray(payload.lmsTargets) && payload.lmsTargets.length) {
           window.LMS_TARGETS = {};
