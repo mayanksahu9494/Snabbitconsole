@@ -5541,6 +5541,12 @@ renderPerf();
   /* ---- Parse LMS rows from payload.lms ---- */
   function cpParseRows(lmsArr) {
     if (!Array.isArray(lmsArr)) return [];
+    /* DIAGNOSTIC: log the keys of the first referral row so we can find the city column */
+    var refSample = lmsArr.find(function(r){ return String(r.source||'').toUpperCase().indexOf('REFERRAL') !== -1; });
+    if (refSample) {
+      console.log('[CP] Referral row keys:', Object.keys(refSample));
+      console.log('[CP] Referral row sample:', JSON.stringify(refSample));
+    }
     return lmsArr.map(r => {
       let dt = null;
       const raw = r.createdAt || r.created_at || r.CreatedAt || '';
