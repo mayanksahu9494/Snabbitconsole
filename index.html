@@ -1801,32 +1801,40 @@ function buildWhatsAppTemplate(city, tc, info) {
 }
 
 function buildWhatsAppTemplateHindi(city, tc, info) {
-  const tcBlock = buildTCBlock(info);
-  const phoneLine = info.phone ? ('\n📞 Directions ke liye call karein: ' + info.phone) : '';
+  const addr = (info.address || '').replace(/https?:\/\/\S+\s*$/, '').trim();
+  const transit = [];
+  if (info.metro)    transit.push('🚇 Metro: ' + info.metro);
+  if (info.bus)      transit.push('🚌 Bus stop: ' + info.bus);
+  if (info.train)    transit.push('🚆 Train: ' + info.train);
+  if (info.landmark) transit.push('🏛️ Landmark: ' + info.landmark);
+  const addrLine = '📍 पता: ट्रेनिंग सेंटर : ' + (tc || '') + (addr ? '\n' + addr : '') + (transit.length ? '\n' + transit.join('\n') : '');
+  const mapLine = '🗺️ Map लोकेशन: ' + (info.maplink || '');
+  const phoneLine = '📞 सहायता के लिए कॉल करें: ' + (info.phone || '');
   return [
-    'Namaste from Team Snabbit',
-    '',
-    'Hum Home Service Experts hire kar rahe hain — House Cleaning ka kaam (Jhadoo, Pocha, Bartan, Dusting).',
-    '',
-    'Kaam aapke ghar se 600 meter ke andar hi milega, Snabbit App ke through.',
-    '',
-    'Monthly kamai: ₹40,000 tak',
-    'Flexible shifts: 4 ghante se 12 ghante tak available',
-    '',
-    '*Benefits:*',
-    '✅ Salary har mahine 6 tareekh ko credit hoti hai',
-    '✅ ₹1,000 Joining Bonus',
-    '✅ ₹3,000 Attendance Bonus',
-    '✅ ₹3,000 Rating Bonus',
-    '✅ ₹2,000–4,000 Referral Bonus',
-    '✅ ₹3 Lakh Insurance Coverage',
-    '',
-    '*Training Centre: ' + tc + '*',
-    tcBlock,
+    'नमस्ते [नाम] जी 🙏',
+    'मैं [नाम] बोल रही/रहा हूँ, Snabbit से। अभी आपसे फ़ोन पर बात हुई थी।',
+    'बधाई हो! Snabbit में काम करने के लिए आपका चयन हो गया है। ✅',
+    '📋 आगे की प्रक्रिया:',
+    '✅ 2 दिन की ट्रेनिंग',
+    '🏅 ट्रेनिंग पूरी होने के बाद Snabbit Expert Certificate',
+    '🏠 इसके बाद आपके घर के पास काम',
+    '💰 फायदे:',
+    '- हर महीने ₹40,000 तक कमाई',
+    '- 4–12 घंटे की फ्लेक्सिबल शिफ्ट',
+    '- ₹1,000 जॉइनिंग बोनस',
+    '- हर सफल रेफ़रल पर ₹4,000 तक का बोनस',
+    '- ₹3 लाख का बीमा',
+    '📅 ट्रेनिंग की तारीख़: ',
+    '🕙 समय: सुबह 10 बजे से शाम 5 बजे तक',
+    '⚠️ कृपया सुबह 10–11 बजे तक ट्रेनिंग सेंटर पहुँच जाएँ।',
+    addrLine,
+    mapLine,
     phoneLine,
-    '',
-    'Aapki training kal scheduled hai. Kripya training centre time pe pahunchein.',
-    'Training timing: 10 AM – 5 PM.',
+    '📋 साथ ज़रूर लाएँ:',
+    '- आधार कार्ड / वोटर ID',
+    '- PAN कार्ड',
+    'कोई भी सवाल हो तो इसी नंबर पर कॉल या मैसेज करें।',
+    'धन्यवाद,',
   ].join('\n');
 }
 
